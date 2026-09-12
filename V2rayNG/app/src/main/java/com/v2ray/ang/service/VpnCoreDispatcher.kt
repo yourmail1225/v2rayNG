@@ -15,8 +15,9 @@ object VpnCoreDispatcher {
             }
             context.startForegroundService(intent)
         } else {
-            Log.i(TAG, "Routing to Xray Service")
-            val intent = Intent(context, V2RayVpnService::class.java)
+            Log.i(TAG, "Routing to Default V2Ray Service")
+            val intent = Intent()
+            intent.setClassName(context.packageName, "com.v2ray.ang.service.V2RayVpnService")
             context.startService(intent)
         }
     }
@@ -27,9 +28,9 @@ object VpnCoreDispatcher {
         }
         context.startService(openvpnIntent)
 
-        val xrayIntent = Intent(context, V2RayVpnService::class.java).apply {
-            action = "com.v2ray.ang.action.STOP"
-        }
+        val xrayIntent = Intent()
+        xrayIntent.setClassName(context.packageName, "com.v2ray.ang.service.V2RayVpnService")
+        xrayIntent.action = "com.v2ray.ang.action.STOP"
         context.startService(xrayIntent)
     }
 }
