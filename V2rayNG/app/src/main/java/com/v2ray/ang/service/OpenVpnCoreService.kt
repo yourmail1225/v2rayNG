@@ -5,14 +5,13 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.v2ray.ang.ui.MainActivity
 
 class OpenVpnCoreService : VpnService(), Runnable {
     companion object {
         const val TAG = "OpenVpnCoreService"
         const val ACTION_START = "com.v2ray.ang.action.OPENVPN_START"
         const val ACTION_STOP = "com.v2ray.ang.action.OPENVPN_STOP"
-        
+
         init {
             try {
                 System.loadLibrary("ovpn3")
@@ -42,11 +41,13 @@ class OpenVpnCoreService : VpnService(), Runnable {
         if (isRunning) return
         isRunning = true
 
-        val configureIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, configureIntent, 
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pendingIntent = launchIntent?.let {
+            PendingIntent.getActivity(
+                this, 0, it,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }
 
         val builder = Builder()
             .setSession("v2rayNG-OpenVPN")
@@ -55,7 +56,10 @@ class OpenVpnCoreService : VpnService(), Runnable {
             .addDnsServer("1.1.1.1")
             .addDnsServer("8.8.8.8")
             .addRoute("0.0.0.0", 0)
-            .setConfigureIntent(pendingIntent)
+
+        if (pendingIntent != null) {
+            builder.setConfigureIntent(pendingIntent)
+        }
 
         try {
             vpnInterface = builder.establish()
