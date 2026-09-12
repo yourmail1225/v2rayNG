@@ -363,7 +363,7 @@
                 android:resource="@xml/cache_paths" />
         </provider>
 
-    <!-- OpenVPN 3 Core Dual-Engine Integration -->
+   <!-- OpenVPN 3 Core Dual-Engine Integration -->
         <activity
             android:name="com.v2ray.ang.ui.ServerOpenvpnActivity"
             android:exported="false"
@@ -380,3 +380,6 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
+
+    </application>
+</manifest>
