@@ -15,8 +15,9 @@ object VpnCoreDispatcher {
             }
             context.startForegroundService(intent)
         } else {
-            Log.i(TAG, "Routing to AndroidLibXrayLite (Xray-core)")
-            V2RayServiceManager.startV2Ray(context)
+            Log.i(TAG, "Routing to Xray Service")
+            val intent = Intent(context, V2RayVpnService::class.java)
+            context.startService(intent)
         }
     }
 
@@ -25,6 +26,10 @@ object VpnCoreDispatcher {
             action = OpenVpnCoreService.ACTION_STOP
         }
         context.startService(openvpnIntent)
-        V2RayServiceManager.stopV2ray(context)
+
+        val xrayIntent = Intent(context, V2RayVpnService::class.java).apply {
+            action = "com.v2ray.ang.action.STOP"
+        }
+        context.startService(xrayIntent)
     }
 }
