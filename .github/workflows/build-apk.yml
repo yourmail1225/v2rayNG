@@ -27,16 +27,39 @@ jobs:
       - name: Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
 
-      - name: Clean invalid aar and build submodules
+      - name: Install GoMobile and Build Xray Core AAR
         run: |
-          rm -rf V2rayNG/app/libs/AndroidLibXrayLite.aar
-          chmod +x compile-hevtun.sh || true
-          ./compile-hevtun.sh || true
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+          export PATH=$PATH:$(go env GOPATH)/bin
+          gomobile init
+          
+          # Build AndroidLibXrayLite if it exists as submodule
+          if [ -d "AndroidLibXrayLite" ]; then
+            cd AndroidLibXrayLite
+            if [ -f "build.sh" ]; then
+              chmod +x build.sh
+              ./build.sh || true
+            elif [ -f "gradlew" ]; then
+              chmod +x gradlew
+              ./gradlew assembleRelease || true
+            fi
+            cd ..
+          fi
 
-      - name: Build Debug APK
+      - name: Build Tun Module
+        run: |
+          if [ -f "compile-hevtun.sh" ]; then
+            chmod +x compile-hevtun.sh
+            ./compile-hevtun.sh || true
+          fi
+
+      - name: Compile and Build Debug APK
         working-directory: V2rayNG
         run: |
           chmod +x gradlew
+          # First check if there is an artifact preparation task
+          ./gradlew tasks --all | grep -i "artifact\|xray\|lib" || true
           ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
