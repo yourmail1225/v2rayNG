@@ -556,5 +556,11 @@
     <string name="tasker_blurb_stop">واڌاشتن %1$s</string>
     <string name="connection_test_empty_message">دووسمندی نؽ</string>
     <string name="value_unknown">نا مؽخص</string>
+    <string name="openvpn_notification_starting">ره وستن OpenVPN</string>
+    <string name="openvpn_notification_connecting">یکجؽ کردنه</string>
+    <string name="openvpn_notification_connected">یکجؽ</string>
+    <string name="openvpn_notification_reconnecting">د بلؽ یکجؽ کردنه</string>
+    <string name="openvpn_notification_authenticating">وارسی کردنه</string>
+    <string name="openvpn_notification_configuring">تروصی تونل</string>
 
 </resources>

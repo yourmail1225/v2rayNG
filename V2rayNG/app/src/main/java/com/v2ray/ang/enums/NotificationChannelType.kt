@@ -18,5 +18,10 @@ enum class NotificationChannelType(
         channelId = "core_test_channel",
         channelName = "Core Test Service",
         notificationId = 12
+    ),
+    OPENVPN(
+        channelId = "openvpn_channel",
+        channelName = "OpenVPN Core Service",
+        notificationId = 14
     )
 }

@@ -33,6 +33,7 @@ class CoreVpnService : VpnService(), ServiceControl {
     private var isRunning = false
     private var tun2SocksService: Tun2SocksControl? = null
     private val isStartingLock = AtomicBoolean(false)
+    private var openVpnDispatched = false
 
     override fun onCreate() {
         super.onCreate()
@@ -76,6 +77,18 @@ class CoreVpnService : VpnService(), ServiceControl {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         NotificationManager.ensureForeground()
+        // Check if the current active profile is an OpenVPN config.
+        // If so, hand the raw .ovpn content to the dedicated OpenVPN engine service.
+        val mainGuid = MmkvManager.getSelectServer()
+        if (!mainGuid.isNullOrEmpty()) {
+            val raw = MmkvManager.decodeServerRaw(mainGuid) ?: ""
+            if (raw.contains("dev tun") || raw.contains("client") || raw.contains("remote ")) {
+                LogUtil.i(AppConfig.TAG, "StartCore-VPN: Dispatching to OpenVpnCoreService")
+                openVpnDispatched = true
+                VpnCoreDispatcher.startService(this, "OPENVPN", raw)
+                return START_STICKY
+            }
+        }
         // Always-on VPN restarts from OS deliver intent.action == SERVICE_INTERFACE or null intent.
         // Reset any stuck start lock left by a killed process to allow setupVpnService() to run.
         val isSystemVpnStart = intent == null || intent.action == SERVICE_INTERFACE
@@ -324,6 +337,13 @@ class CoreVpnService : VpnService(), ServiceControl {
 //        saveVpnNetworkInfo(configName, info)
         unlockStart()
         isRunning = false
+
+        // Stop the OpenVPN engine first if this instance was dispatched to it.
+        if (openVpnDispatched) {
+            LogUtil.i(AppConfig.TAG, "StartCore-VPN: Stopping OpenVPN engine")
+            VpnCoreDispatcher.stopService(this, "OPENVPN")
+            openVpnDispatched = false
+        }
 
         tun2SocksService?.stopTun2Socks()
         tun2SocksService = null

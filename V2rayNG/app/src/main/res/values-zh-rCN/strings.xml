@@ -554,5 +554,11 @@
     <string name="tasker_blurb_stop">停止 %1$s</string>
     <string name="connection_test_empty_message">无详细信息</string>
     <string name="value_unknown">未知</string>
+    <string name="openvpn_notification_starting">正在启动 OpenVPN</string>
+    <string name="openvpn_notification_connecting">正在连接</string>
+    <string name="openvpn_notification_connected">已连接</string>
+    <string name="openvpn_notification_reconnecting">正在重新连接</string>
+    <string name="openvpn_notification_authenticating">正在认证</string>
+    <string name="openvpn_notification_configuring">正在配置隧道</string>
 
 </resources>

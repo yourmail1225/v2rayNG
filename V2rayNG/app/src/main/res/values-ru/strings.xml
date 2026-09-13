@@ -560,5 +560,11 @@
     <string name="tasker_blurb_stop">Остановить %1$s</string>
     <string name="connection_test_empty_message">подробности отсутствуют</string>
     <string name="value_unknown">неизвестно</string>
+    <string name="openvpn_notification_starting">Запуск OpenVPN</string>
+    <string name="openvpn_notification_connecting">Подключение...</string>
+    <string name="openvpn_notification_connected">Подключено</string>
+    <string name="openvpn_notification_reconnecting">Повторное подключение</string>
+    <string name="openvpn_notification_authenticating">Аутентификация</string>
+    <string name="openvpn_notification_configuring">Настройка туннеля</string>
 
 </resources>

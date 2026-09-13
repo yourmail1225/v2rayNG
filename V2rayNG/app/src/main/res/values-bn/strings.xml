@@ -556,5 +556,11 @@
     <string name="tasker_blurb_stop">%1$s বন্ধ করুন</string>
     <string name="connection_test_empty_message">কোনো বিবরণ পাওয়া যায়নি</string>
     <string name="value_unknown">অজানা</string>
+    <string name="openvpn_notification_starting">OpenVPN চালু হচ্ছে</string>
+    <string name="openvpn_notification_connecting">সংযোগ হচ্ছে</string>
+    <string name="openvpn_notification_connected">সংযুক্ত</string>
+    <string name="openvpn_notification_reconnecting">পুনঃসংযোগ হচ্ছে</string>
+    <string name="openvpn_notification_authenticating">প্রমাণীকরণ হচ্ছে</string>
+    <string name="openvpn_notification_configuring">টানেল কনফিগার হচ্ছে</string>
 
 </resources>

@@ -556,5 +556,11 @@
     <string name="tasker_blurb_stop">توقف %1$s</string>
     <string name="connection_test_empty_message">جزئیاتی در دسترس نیست</string>
     <string name="value_unknown">ناشناخته</string>
+    <string name="openvpn_notification_starting">شروع OpenVPN</string>
+    <string name="openvpn_notification_connecting">در حال اتصال</string>
+    <string name="openvpn_notification_connected">متصل</string>
+    <string name="openvpn_notification_reconnecting">در حال اتصال مجدد</string>
+    <string name="openvpn_notification_authenticating">در حال احراز هویت</string>
+    <string name="openvpn_notification_configuring">در حال پیکربندی تونل</string>
 
 </resources>

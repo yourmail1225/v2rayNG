@@ -45,6 +45,43 @@ jobs:
           chmod +x compile-hevtun.sh || true
           ./compile-hevtun.sh || true
 
+      - name: Fetch OpenVPN engine binaries
+        run: |
+          set -euo pipefail
+
+          # libopenvpn.so (the real engine) and libovpnexec.so (the exec shim)
+          # come from the gpl-licensed ics-openvpn F-Droid release of
+          # de.blinkt.openvpn. The shim dlopens libopenvpn.so via
+          # LD_LIBRARY_PATH=nativeLibraryDir at runtime.
+          curl --fail --location --retry 5 --retry-all-errors \
+            -o /tmp/ics-openvpn.apk \
+            https://f-droid.org/repo/de.blinkt.openvpn_220.apk
+
+          # Abort on a truncated download (the repo regularly throttles it).
+          SIZE=$(stat -c %s /tmp/ics-openvpn.apk)
+          if [ "$SIZE" -lt 30000000 ]; then
+            echo "OpenVPN APK download is only ${SIZE} bytes, refusing to build"
+            exit 1
+          fi
+
+          rm -rf /tmp/ics-apk
+          mkdir -p /tmp/ics-apk
+          unzip -q /tmp/ics-openvpn.apk 'lib/*' 'assets/pie_openvpn.*' -d /tmp/ics-apk
+
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            mkdir -p "V2rayNG/app/libs/$abi"
+            cp "/tmp/ics-apk/lib/$abi/libopenvpn.so"  "V2rayNG/app/libs/$abi/"
+            cp "/tmp/ics-apk/lib/$abi/libovpnexec.so" "V2rayNG/app/libs/$abi/"
+          done
+
+          # Pre-API-28 fallback shims ("exec" and dlopen are unsupported in
+          # nativeLibraryDir); kept for the app-side copy fallback.
+          mkdir -p "V2rayNG/app/src/main/assets"
+          cp /tmp/ics-apk/assets/pie_openvpn.* "V2rayNG/app/src/main/assets/"
+
+          echo "OpenVPN binaries ready:"
+          find V2rayNG/app/libs -name 'lib*openvpn*' -exec ls -lh {} \;
+
       - name: Build Debug APK
         working-directory: V2rayNG
         run: |

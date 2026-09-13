@@ -556,5 +556,11 @@
     <string name="tasker_blurb_stop">Stop %1$s</string>
     <string name="connection_test_empty_message">no details available</string>
     <string name="value_unknown">unknown</string>
+    <string name="openvpn_notification_starting">Starting OpenVPN</string>
+    <string name="openvpn_notification_connecting">Connecting</string>
+    <string name="openvpn_notification_connected">Connected</string>
+    <string name="openvpn_notification_reconnecting">Reconnecting</string>
+    <string name="openvpn_notification_authenticating">Authenticating</string>
+    <string name="openvpn_notification_configuring">Configuring tunnel</string>
 
 </resources>

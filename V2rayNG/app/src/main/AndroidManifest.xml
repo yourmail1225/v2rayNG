@@ -364,12 +364,6 @@
         </provider>
 
    <!-- OpenVPN 3 Core Dual-Engine Integration -->
-        <activity
-            android:name="com.v2ray.ang.ui.ServerOpenvpnActivity"
-            android:exported="false"
-            android:label="OpenVPN Settings"
-            android:windowSoftInputMode="stateUnchanged" />
-
         <service
             android:name="com.v2ray.ang.service.OpenVpnCoreService"
             android:exported="false"

@@ -2,35 +2,39 @@ package com.v2ray.ang.service
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import com.v2ray.ang.util.LogUtil
 
+/**
+ * Routes app-initiated VPN commands to the engine that owns the current run mode.
+ *
+ * Only the OpenVPN engine is dispatched through this object. The V2Ray/Xray engine
+ * keeps its existing path through [CoreVpnService] and [CoreServiceManager], so the
+ * dispatcher never re-targets a non-OpenVPN profile.
+ */
 object VpnCoreDispatcher {
     private const val TAG = "VpnCoreDispatcher"
 
     fun startService(context: Context, serverType: String, configData: String) {
         if (serverType.equals("openvpn", ignoreCase = true)) {
-            Log.i(TAG, "Routing to OpenVpnCoreService (OpenVPN 3 Native C++)")
+            LogUtil.i(TAG, "Routing to OpenVpnCoreService (OpenVPN 3 Native C++)")
             val intent = Intent(context, OpenVpnCoreService::class.java).apply {
                 putExtra("CONFIG_CONTENT", configData)
             }
             context.startForegroundService(intent)
         } else {
-            Log.i(TAG, "Routing to Default V2Ray Service")
-            val intent = Intent()
-            intent.setClassName(context.packageName, "com.v2ray.ang.service.V2RayVpnService")
-            context.startService(intent)
+            LogUtil.w(TAG, "Unsupported serverType=$serverType, ignoring dispatch")
         }
     }
 
-    fun stopService(context: Context) {
-        val openvpnIntent = Intent(context, OpenVpnCoreService::class.java).apply {
+    fun stopService(context: Context, serverType: String? = null) {
+        if (serverType != null && !serverType.equals("openvpn", ignoreCase = true)) {
+            LogUtil.w(TAG, "Unsupported serverType=$serverType, ignoring stop dispatch")
+            return
+        }
+        LogUtil.i(TAG, "Stopping OpenVpnCoreService")
+        val stopIntent = Intent(context, OpenVpnCoreService::class.java).apply {
             action = OpenVpnCoreService.ACTION_STOP
         }
-        context.startService(openvpnIntent)
-
-        val xrayIntent = Intent()
-        xrayIntent.setClassName(context.packageName, "com.v2ray.ang.service.V2RayVpnService")
-        xrayIntent.action = "com.v2ray.ang.action.STOP"
-        context.startService(xrayIntent)
+        context.startService(stopIntent)
     }
 }

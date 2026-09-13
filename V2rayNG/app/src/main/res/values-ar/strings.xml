@@ -564,5 +564,11 @@
     <string name="tasker_blurb_stop">إيقاف %1$s</string>
     <string name="connection_test_empty_message">لا تتوفر تفاصيل</string>
     <string name="value_unknown">غير معروف</string>
+    <string name="openvpn_notification_starting">تشغيل OpenVPN</string>
+    <string name="openvpn_notification_connecting">جارٍ الاتصال</string>
+    <string name="openvpn_notification_connected">متصل</string>
+    <string name="openvpn_notification_reconnecting">إعادة الاتصال</string>
+    <string name="openvpn_notification_authenticating">جارٍ المصادقة</string>
+    <string name="openvpn_notification_configuring">جارٍ إعداد النفق</string>
 
 </resources>

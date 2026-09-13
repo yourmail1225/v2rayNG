@@ -554,5 +554,11 @@
     <string name="tasker_blurb_stop">Dừng %1$s</string>
     <string name="connection_test_empty_message">không có thông tin chi tiết</string>
     <string name="value_unknown">không xác định</string>
+    <string name="openvpn_notification_starting">Đang khởi động OpenVPN</string>
+    <string name="openvpn_notification_connecting">Đang kết nối</string>
+    <string name="openvpn_notification_connected">Đã kết nối</string>
+    <string name="openvpn_notification_reconnecting">Đang kết nối lại</string>
+    <string name="openvpn_notification_authenticating">Đang xác thực</string>
+    <string name="openvpn_notification_configuring">Đang cấu hình đường hầm</string>
 
 </resources>
