@@ -5,6 +5,7 @@ import android.os.Build
 import com.v2ray.ang.util.LogUtil
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 /**
  * Runs the OpenVPN 2.x engine binary as a child process with a config file
@@ -75,7 +76,7 @@ class OpenVpnEngine(
         try {
             if (proc?.isAlive == true) {
                 proc.destroy()
-                proc.waitFor(3000)
+                proc.waitFor(3000, TimeUnit.MILLISECONDS)
             }
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
