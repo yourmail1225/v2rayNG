@@ -27,43 +27,20 @@ jobs:
       - name: Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
 
-      - name: Install GoMobile and Build Xray Core AAR
+      - name: Build Submodule Core and Tun
         run: |
-          go install golang.org/x/mobile/cmd/gomobile@latest
-          go install golang.org/x/mobile/cmd/gobind@latest
-          export PATH=$PATH:$(go env GOPATH)/bin
-          gomobile init
-          
-          # Build AndroidLibXrayLite if it exists as submodule
-          if [ -d "AndroidLibXrayLite" ]; then
-            cd AndroidLibXrayLite
-            if [ -f "build.sh" ]; then
-              chmod +x build.sh
-              ./build.sh || true
-            elif [ -f "gradlew" ]; then
-              chmod +x gradlew
-              ./gradlew assembleRelease || true
-            fi
-            cd ..
-          fi
+          chmod +x compile-hevtun.sh || true
+          ./compile-hevtun.sh || true
 
-      - name: Build Tun Module
-        run: |
-          if [ -f "compile-hevtun.sh" ]; then
-            chmod +x compile-hevtun.sh
-            ./compile-hevtun.sh || true
-          fi
-
-      - name: Compile and Build Debug APK
+      - name: Build All Modules with Gradle
         working-directory: V2rayNG
         run: |
           chmod +x gradlew
-          # First check if there is an artifact preparation task
-          ./gradlew tasks --all | grep -i "artifact\|xray\|lib" || true
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          # Build all library subprojects first so libv2ray classes are generated
+          ./gradlew assembleFdroidDebug --no-daemon -x test --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: v2rayNG-OpenVPN-Debug-APK
-          path: V2rayNG/app/build/outputs/apk/debug/*.apk
+          path: V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk
