@@ -181,6 +181,21 @@ object AngConfigManager {
      */
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
+            // OpenVPN .ovpn auto-detection & import
+            if (server != null && (server.contains("dev tun") || server.contains("client") || server.contains("remote ") || server.contains("<ca>"))) {
+                val profile = ProfileItem(
+                    configType = EConfigType.CUSTOM,
+                    subscriptionId = subid,
+                    remarks = "OpenVPN Profile",
+                )
+                commitProfiles(
+                    configs = listOf(ParsedProfile(profile = profile, rawConfig = server)),
+                    subid = subid,
+                    append = append,
+                )
+                return 1 to 0
+            }
+
             var count = parseBatchConfig(Utils.decode(server), subid, append)
             if (count <= 0) {
                 count = parseBatchConfig(server, subid, append)
@@ -203,7 +218,6 @@ object AngConfigManager {
             0 to 0
         }
     }
-
     /**
      * Parses a batch of subscriptions.
      *
