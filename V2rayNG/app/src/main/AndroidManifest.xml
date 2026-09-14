@@ -116,6 +116,10 @@
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
         <activity
+            android:name=".ui.server.ServerOpenVpnActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateUnchanged|adjustResize" />
+        <activity
             android:name=".ui.server.ServerGroupActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />

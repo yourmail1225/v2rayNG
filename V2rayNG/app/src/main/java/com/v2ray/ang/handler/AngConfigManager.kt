@@ -12,6 +12,7 @@ import com.v2ray.ang.dto.entities.SubscriptionCache
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.isNotNullEmpty
+import com.v2ray.ang.extension.isOpenVpnConfig
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.Hysteria2Fmt
 import com.v2ray.ang.fmt.ShadowsocksFmt
@@ -132,6 +133,15 @@ object AngConfigManager {
     fun shareFullContent2Clipboard(context: Context, guid: String?): Int {
         try {
             if (guid == null) return -1
+            val config = MmkvManager.decodeServerConfig(guid)
+            // An OpenVPN profile shares its raw .ovpn content; the v2ray config builder
+            // does not understand it.
+            if (config?.configType == EConfigType.OPENVPN) {
+                val raw = MmkvManager.decodeServerRaw(guid)
+                if (raw.isNullOrEmpty()) return -1
+                Utils.setClipboard(context, raw)
+                return 0
+            }
             val result = CoreConfigManager.getV2rayConfig(context, guid)
             if (result.status) {
                 Utils.setClipboard(context, result.content)
@@ -154,6 +164,11 @@ object AngConfigManager {
     private fun shareConfig(guid: String): String {
         try {
             val config = MmkvManager.decodeServerConfig(guid) ?: return ""
+
+            // An OpenVPN profile shares its raw .ovpn text; it has no URI encoding.
+            if (config.configType == EConfigType.OPENVPN) {
+                return MmkvManager.decodeServerRaw(guid).orEmpty()
+            }
 
             return config.configType.protocolScheme + when (config.configType) {
                 EConfigType.VMESS -> VmessFmt.toUri(config)
@@ -182,11 +197,11 @@ object AngConfigManager {
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
             // OpenVPN .ovpn auto-detection & import
-            if (server != null && (server.contains("dev tun") || server.contains("client") || server.contains("remote ") || server.contains("<ca>"))) {
+            if (server.isOpenVpnConfig()) {
                 val profile = ProfileItem(
-                    configType = EConfigType.CUSTOM,
+                    configType = EConfigType.OPENVPN,
                     subscriptionId = subid,
-                    remarks = "OpenVPN Profile",
+                    remarks = "OpenVPN",
                 )
                 commitProfiles(
                     configs = listOf(ParsedProfile(profile = profile, rawConfig = server)),

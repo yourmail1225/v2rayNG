@@ -17,6 +17,8 @@ import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.contracts.ServiceControl
 import com.v2ray.ang.contracts.Tun2SocksControl
 import com.v2ray.ang.core.CoreServiceManager
+import com.v2ray.ang.enums.EConfigType
+import com.v2ray.ang.extension.isOpenVpnConfig
 import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.NotificationManager
@@ -81,11 +83,18 @@ class CoreVpnService : VpnService(), ServiceControl {
         // If so, hand the raw .ovpn content to the dedicated OpenVPN engine service.
         val mainGuid = MmkvManager.getSelectServer()
         if (!mainGuid.isNullOrEmpty()) {
+            val profile = MmkvManager.decodeServerConfig(mainGuid)
             val raw = MmkvManager.decodeServerRaw(mainGuid) ?: ""
-            if (raw.contains("dev tun") || raw.contains("client") || raw.contains("remote ")) {
+            // Trust the stored type first; the content sniff covers profiles that
+            // were imported as CUSTOM before the OPENVPN type existed.
+            val isOpenVpn = profile?.configType == EConfigType.OPENVPN || raw.isOpenVpnConfig()
+            if (isOpenVpn && raw.isNotEmpty()) {
                 LogUtil.i(AppConfig.TAG, "StartCore-VPN: Dispatching to OpenVpnCoreService")
                 openVpnDispatched = true
-                VpnCoreDispatcher.startService(this, "OPENVPN", raw)
+                // The daemon holds no VPN interface of its own in OpenVPN mode; drop its
+                // foreground notification so the engine process owns the only tile.
+                NotificationManager.cancelNotification()
+                VpnCoreDispatcher.startService(this, "OPENVPN", raw, profile?.username, profile?.password)
                 return START_STICKY
             }
         }

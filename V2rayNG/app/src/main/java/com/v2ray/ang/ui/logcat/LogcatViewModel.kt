@@ -37,7 +37,10 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
                 lst.add("-v")
                 lst.add("time")
                 lst.add("-s")
-                lst.add("GoLog,${AppConfig.ANG_PACKAGE},AndroidRuntime,System.err")
+                lst.add(
+                    "GoLog,${AppConfig.ANG_PACKAGE},OpenVPN,OpenVpnEngine,OpenVpnCoreService,OpenVpnManagement," +
+                        "VpnCoreDispatcher,AndroidRuntime,System.err"
+                )
                 val process = Runtime.getRuntime().exec(lst.toTypedArray())
                 val allText = process.inputStream.bufferedReader().use { it.readLines() }.reversed()
 

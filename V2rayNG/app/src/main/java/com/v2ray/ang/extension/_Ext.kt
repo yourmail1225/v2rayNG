@@ -70,12 +70,32 @@ fun EConfigType.isGroupType(): Boolean {
 }
 
 /**
- * Checks if the config type is a complex type (Custom, PolicyGroup, or ProxyChain).
+ * Checks if the config type is a complex type (Custom, OpenVPN, PolicyGroup, or ProxyChain).
  *
- * @return True if the config type is Custom, PolicyGroup, or ProxyChain, false otherwise.
+ * Toast, delay-test, share, and group-config paths treat complex profiles as raw blobs:
+ * they carry no v2ray outbound/address to validate and are never embedded into a
+ * generated configuration.
+ *
+ * @return True if the config type is Custom, OpenVPN, PolicyGroup, or ProxyChain, false otherwise.
  */
 fun EConfigType.isComplexType(): Boolean {
-    return this == EConfigType.CUSTOM || this == EConfigType.POLICYGROUP || this == EConfigType.PROXYCHAIN
+    return this == EConfigType.CUSTOM
+        || this == EConfigType.OPENVPN
+        || this == EConfigType.POLICYGROUP
+        || this == EConfigType.PROXYCHAIN
+}
+
+/**
+ * Sniffs a raw imported/exported configuration for OpenVPN markers. Kept as a pure
+ * heuristic (not a parser): a config with any of these tokens is treated as an .ovpn
+ * profile by the import flow and the service dispatcher.
+ */
+fun String?.isOpenVpnConfig(): Boolean {
+    if (this == null) return false
+    return contains("dev tun") ||
+        contains("client") ||
+        contains("remote ") ||
+        contains("<ca>")
 }
 
 /**

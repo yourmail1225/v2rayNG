@@ -88,6 +88,33 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleFdroidDebug --no-daemon --stacktrace
 
+      - name: Run unit tests
+        working-directory: V2rayNG
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testFdroidDebugUnitTest --no-daemon
+
+      - name: Verify OpenVPN engine inside APK
+        run: |
+          set -euo pipefail
+          APKS=$(ls V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk)
+          echo "APKs:"
+          for apk in $APKS; do echo "  $apk"; done
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            found=0
+            for apk in $APKS; do
+              if unzip -l "$apk" | grep -q "lib/$abi/libopenvpn.so" && unzip -l "$apk" | grep -q "lib/$abi/libovpnexec.so"; then
+                found=1
+                break
+              fi
+            done
+            if [ "$found" != "1" ]; then
+              echo "ERROR: no APK carries the $abi OpenVPN engine"
+              exit 1
+            fi
+            echo "$abi engine present"
+          done
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:

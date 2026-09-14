@@ -204,7 +204,10 @@ fun ServerCustomConfigScreen(
     initialContent: String,
     onBackClick: () -> Unit,
     onSave: (String, String) -> Boolean,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    title: String = EConfigType.CUSTOM.toString(),
+    editorPlaceholder: String = "{ }",
+    credentialsAction: (@Composable () -> Unit)? = null
 ) {
     var remarks by rememberSaveable { mutableStateOf(initialRemarks) }
     val textFieldState = rememberTextFieldState(initialText = initialContent)
@@ -314,9 +317,10 @@ fun ServerCustomConfigScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             AppTopBar(
-                title = EConfigType.CUSTOM.toString(),
+                title = title,
                 onBackClick = onBackClick,
                 actions = {
+                    credentialsAction?.invoke()
                     if (showDelete) {
                         IconButton(onClick = { showDeleteConfirm = true }) {
                             Icon(
@@ -439,7 +443,7 @@ fun ServerCustomConfigScreen(
                                 Box {
                                     if (textFieldState.text.isEmpty()) {
                                         Text(
-                                            text = "{ }",
+                                            text = editorPlaceholder,
                                             style = TextStyle(
                                                 fontFamily = FontFamily.Monospace,
                                                 fontSize = EditorConstants.FONT_SIZE,

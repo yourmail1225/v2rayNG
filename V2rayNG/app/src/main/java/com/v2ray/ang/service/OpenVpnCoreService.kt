@@ -1,15 +1,22 @@
 package com.v2ray.ang.service
 
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import androidx.core.content.ContextCompat
+import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.enums.NotificationChannelType
+import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.helper.NotificationHelper
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.Utils
 import java.io.File
 
 class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
@@ -18,6 +25,8 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
         const val ACTION_START = "com.v2ray.ang.action.OPENVPN_START"
         const val ACTION_STOP = "com.v2ray.ang.action.OPENVPN_STOP"
         const val EXTRA_CONFIG = "CONFIG_CONTENT"
+        const val EXTRA_USERNAME = "OPENVPN_USERNAME"
+        const val EXTRA_PASSWORD = "OPENVPN_PASSWORD"
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -27,6 +36,12 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     @Volatile
     private var savedConfig = ""
     @Volatile
+    private var extraUsername = ""
+    @Volatile
+    private var extraPassword = ""
+    @Volatile
+    private var stopSuccessNotified = true
+    @Volatile
     private var tunConfig = OpenVpnTunConfig()
     @Volatile
     private var vpnInterface: ParcelFileDescriptor? = null
@@ -35,6 +50,20 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     private var engine: OpenVpnEngine? = null
     private var lastTunCfg = OpenVpnTunConfig()
     private var lastNotificationTime = 0L
+    private var stopReceiverRegistered = false
+
+    /**
+     * Handles the UI's app-internal MSG_STATE_STOP broadcast directly in this process so
+     * stopping keeps working when the daemon process was killed while OpenVPN is up.
+     */
+    private val stopReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.getIntExtra("key", 0) == AppConfig.MSG_STATE_STOP) {
+                LogUtil.i(TAG, "Received MSG_STATE_STOP, stopping OpenVPN")
+                stopVpn()
+            }
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Entering foreground before reading configuration or opening the tunnel
@@ -64,6 +93,9 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
                     stopSelf()
                     return START_NOT_STICKY
                 }
+                intent?.getStringExtra(EXTRA_USERNAME)?.let { extraUsername = it }
+                intent?.getStringExtra(EXTRA_PASSWORD)?.let { extraPassword = it }
+                registerStopReceiver()
                 return if (startVpn(configContent)) START_STICKY else START_NOT_STICKY
             }
         }
@@ -98,6 +130,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
             // Mark running before starting the process so an immediate process
             // exit still routes through the cleanup path.
             isRunning = true
+            stopSuccessNotified = false
             if (!eng.start()) {
                 isRunning = false
                 mgmt.closeManagementInterface()
@@ -132,11 +165,19 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     private fun onProcessLogLine(line: String) {
         if (line.contains("Initialization Sequence Completed")) {
             updateNotification(getString(R.string.openvpn_notification_connected))
+            notifyStartSuccess()
         }
         if (line.startsWith("MANAGEMENT: ")) {
             return
         }
         LogUtil.i("OpenVPN", line)
+    }
+
+    /** Flips the UI toggle to "connected" exactly once per connection. */
+    private fun notifyStartSuccess() {
+        if (isRunning) {
+            MessageHelper.sendMsg2UI(this, AppConfig.MSG_STATE_START_SUCCESS, "")
+        }
     }
 
     private fun updateNotification(content: String) {
@@ -156,6 +197,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
 
     private fun stopVpn() {
         synchronized(lock) {
+            val wasRunning = isRunning
             val mgmt = managementThread
             val mgmtHandle = managementThreadHandle
             val eng = engine
@@ -181,11 +223,42 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
             vpnInterface = null
             tunConfig = OpenVpnTunConfig()
             NotificationHelper.stopForeground(this)
+            if (wasRunning && !stopSuccessNotified) {
+                stopSuccessNotified = true
+                MessageHelper.sendMsg2UI(this, AppConfig.MSG_STATE_STOP_SUCCESS, "")
+            }
             stopSelf()
         }
     }
 
+    override fun onRevoke() {
+        LogUtil.w(TAG, "VPN permission revoked")
+        stopVpn()
+    }
+
+    private fun registerStopReceiver() {
+        if (stopReceiverRegistered) {
+            return
+        }
+        ContextCompat.registerReceiver(
+            this,
+            stopReceiver,
+            IntentFilter(AppConfig.BROADCAST_ACTION_SERVICE),
+            Utils.receiverFlags()
+        )
+        stopReceiverRegistered = true
+    }
+
+    private fun unregisterStopReceiver() {
+        if (!stopReceiverRegistered) {
+            return
+        }
+        runCatching { unregisterReceiver(stopReceiver) }
+        stopReceiverRegistered = false
+    }
+
     override fun onDestroy() {
+        unregisterStopReceiver()
         stopVpn()
         super.onDestroy()
     }
@@ -376,6 +449,9 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
             return
         }
         LogUtil.i(TAG, "OpenVPN state: $state $detail")
+        if (state == "CONNECTED") {
+            notifyStartSuccess()
+        }
         val content = when (state) {
             "CONNECTED" -> getString(R.string.openvpn_notification_connected)
             "RECONNECTING" -> getString(R.string.openvpn_notification_reconnecting)
@@ -415,12 +491,14 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     }
 
     override fun credentialsFor(needed: String): Pair<String, String>? {
-        val eng = engine ?: return null
         if (needed != "Auth") {
             return null
         }
-        val user = eng.username ?: return null
-        val pass = eng.password ?: return null
+        val user = extraUsername.ifEmpty { engine?.username.orEmpty() }
+        val pass = extraPassword.ifEmpty { engine?.password.orEmpty() }
+        if (user.isBlank() || pass.isBlank()) {
+            return null
+        }
         return user to pass
     }
 }

@@ -1,5 +1,6 @@
 package com.v2ray.ang.service
 
+import com.v2ray.ang.extension.isOpenVpnConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -109,7 +110,44 @@ class OpenVpnTunConfigTest {
         assertEquals("myuser" to "mypassword", OpenVpnEngine.parseInlineCredentials("auth-user-pass\nmyuser\nmypassword"))
         assertEquals("a" to "b", OpenVpnEngine.parseInlineCredentials("# c\nauth-user-pass\na\nb\n"))
         assertNull(OpenVpnEngine.parseInlineCredentials("auth-user-pass /file/storage\n"))
-        assertNull(OpenVpnEngine.parseInlineCredentials("client\ndev tun\n"))
         assertNull(OpenVpnEngine.parseInlineCredentials(""))
+    }
+
+    @Test
+    fun mapRawLinesNormalizesNamedTunDevice() {
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun0\nclient\n"))
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun1\nclient\n"))
+        // The canonical form and non-tun devices stay untouched.
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun\n"))
+        assertEquals("dev tap", OpenVpnEngine.mapRawLines("dev tap\n"))
+        // Leading whitespace is normalized with the device name.
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("  dev tun3\n"))
+    }
+
+    @Test
+    fun mapRawLinesStripsPersistAndMgmtOptions() {
+        val raw = """
+            persist-tun
+            persist-key
+            management 127.0.0.1 5555
+            client
+            dev tun
+        """.trimIndent()
+        val mapped = OpenVpnEngine.mapRawLines(raw)
+        assertFalse(mapped.contains("persist-tun"))
+        assertFalse(mapped.contains("persist-key"))
+        assertFalse(mapped.contains("127.0.0.1 5555"))
+        assertTrue(mapped.contains("client"))
+        assertTrue(mapped.contains("dev tun"))
+    }
+
+    @Test
+    fun isOpenVpnConfigDetectsOvpnMarkers() {
+        assertTrue("client\ndev tun\nremote host 443\n".isOpenVpnConfig())
+        assertTrue("dev tun0\n".isOpenVpnConfig())
+        assertTrue("<ca>\n</ca>\n".isOpenVpnConfig())
+        assertFalse("vmess://abc==\n".isOpenVpnConfig())
+        assertFalse("".isOpenVpnConfig())
+        assertFalse(null.isOpenVpnConfig())
     }
 }

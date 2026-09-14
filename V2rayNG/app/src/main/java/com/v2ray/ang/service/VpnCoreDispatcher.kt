@@ -14,11 +14,23 @@ import com.v2ray.ang.util.LogUtil
 object VpnCoreDispatcher {
     private const val TAG = "VpnCoreDispatcher"
 
-    fun startService(context: Context, serverType: String, configData: String) {
+    fun startService(
+        context: Context,
+        serverType: String,
+        configData: String,
+        username: String? = null,
+        password: String? = null,
+    ) {
         if (serverType.equals("openvpn", ignoreCase = true)) {
             LogUtil.i(TAG, "Routing to OpenVpnCoreService (OpenVPN 3 Native C++)")
             val intent = Intent(context, OpenVpnCoreService::class.java).apply {
-                putExtra("CONFIG_CONTENT", configData)
+                putExtra(OpenVpnCoreService.EXTRA_CONFIG, configData)
+                if (!username.isNullOrEmpty()) {
+                    putExtra(OpenVpnCoreService.EXTRA_USERNAME, username)
+                }
+                if (!password.isNullOrEmpty()) {
+                    putExtra(OpenVpnCoreService.EXTRA_PASSWORD, password)
+                }
             }
             context.startForegroundService(intent)
         } else {

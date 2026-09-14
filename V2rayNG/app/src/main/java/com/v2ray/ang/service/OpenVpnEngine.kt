@@ -28,7 +28,7 @@ class OpenVpnEngine(
 
     private var process: Process? = null
     private var readerThread: Thread? = null
-    private val logPattern = Regex("""(\d+)\.(\d+) ([0-9a-f])+ (.*)""")
+    private val logPattern = Regex("""(\d+)\.(\d+) ([0-9A-Fa-f])+ (.*)""")
     private val configFile: File = File(context.cacheDir, "v2rayng_openvpn.conf")
 
     init {
@@ -166,7 +166,12 @@ class OpenVpnEngine(
                 "management-query-passwords",
                 "management-hold",
                 "machine-readable-output",
-                "allow-recursive-routing"
+                "allow-recursive-routing",
+                // The Android management API passes the tun fd over the socket on a
+                // releaseHold; persisting the tun across process restarts is impossible.
+                "persist-tun",
+                // The engine never stays up across a telephony/network switch here.
+                "persist-key"
             )
             return raw.lineSequence().map { line ->
                 val key = line.trim().substringBefore(' ')
@@ -175,9 +180,21 @@ class OpenVpnEngine(
                     // A file-backed auth-user-pass cannot exist on Android;
                     // switch it to the management prompt for credentials.
                     key == "auth-user-pass" && line.trim() != "auth-user-pass" -> "auth-user-pass"
+                    key == "dev" -> normalizeDev(line.trim())
                     else -> line
                 }
             }.filterNotNull().joinToString("\n")
+        }
+
+        // The management OPENTUN payload must be exactly the literal "tun"; a named
+        // device (e.g. "dev tun0") cancels the handshake. Android owns the device name
+        // once the engine creates it, so any tun<name> the user pinned is normalized.
+        private fun normalizeDev(line: String): String {
+            val value = line.removePrefix("dev").trim()
+            return when {
+                value == "tun" || value.startsWith("dev ") || value.isEmpty() || !value.startsWith("tun") -> line
+                else -> "dev tun"
+            }
         }
 
         internal fun parseInlineCredentials(raw: String): Pair<String, String>? {
