@@ -20,7 +20,18 @@ jobs:
           java-version: '21'
 
       - name: Setup Android SDK & NDK
-        uses: android-actions/setup-android@v3
+        run: |
+          set -euo pipefail
+          # GitHub-hosted runners ship a fully licensed Android SDK and NDK. The
+          # third-party setup-android action regressed (it tries to install the now
+          # removed legacy 'tools' SDK package), so export the preinstalled tools.
+          NDK_DIR=$(ls -1d "$ANDROID_HOME"/ndk/* 2>/dev/null | head -n1)
+          test -n "$NDK_DIR"
+          echo "Using Android SDK: $ANDROID_HOME"
+          echo "Using Android NDK: $NDK_DIR"
+          echo "NDK_HOME=$NDK_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$NDK_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$NDK_DIR" >> "$GITHUB_ENV"
 
       - name: Fetch and verify AndroidLibXrayLite AAR
         run: |
