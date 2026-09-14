@@ -109,6 +109,8 @@ object LockEvaluator {
                 isLenient = false
             }
             val date = sdf.parse(text) ?: return null
+            // Reject out-of-range fields like "25:00" that some JDKs silently normalize.
+            if (sdf.format(date) != text) return null
             (date.time + zone.getOffset(date.time)) / MINUTE_MILLIS
         } catch (e: Exception) {
             null
