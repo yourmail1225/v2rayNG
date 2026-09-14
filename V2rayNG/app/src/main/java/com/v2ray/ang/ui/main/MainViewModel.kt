@@ -10,6 +10,7 @@ import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.LocateTarget
 import com.v2ray.ang.dto.TestServiceMessage
+import com.v2ray.ang.dto.entities.GroupLockConfig
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServersCache
 import com.v2ray.ang.dto.entities.SubscriptionCache
@@ -22,6 +23,8 @@ import com.v2ray.ang.handler.SpeedtestManager
 import com.v2ray.ang.service.OpenVpnEngine
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.LockDeniedMessage
+import com.v2ray.ang.util.LockEvaluator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -115,6 +118,10 @@ class MainViewModel(
             }
 
             MainServiceEvent.StateStopSuccess -> updateRunningState(false)
+            is MainServiceEvent.StateLockDenied -> {
+                _uiState.update { it.copy(lockNotice = event.message) }
+            }
+
             is MainServiceEvent.MeasureDelayResult -> {
                 if (!uiState.value.isRunning || !testRequests.completeCurrent(event.requestId)) return
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
@@ -222,6 +229,18 @@ class MainViewModel(
             is MainAction.Search -> filterConfig(action.query)
             is MainAction.ImportBatchConfig -> importBatchConfig(action.configText)
             MainAction.LocateHandled -> consumeLocateTarget()
+            is MainAction.ToggleProfileLock -> toggleProfileLock(action.guid)
+            MainAction.ExportLocked -> exportLockedAsync()
+            is MainAction.OpenGroupLockEditor -> openGroupLockEditor(action.groupId)
+            is MainAction.SaveGroupLock -> saveGroupLock(action)
+            is MainAction.ResetGroupData -> resetGroupData(action.groupId)
+            MainAction.DismissGroupLockEditor -> {
+                _uiState.update { it.copy(groupLockEditor = null) }
+            }
+
+            MainAction.DismissLockNotice -> {
+                _uiState.update { it.copy(lockNotice = null) }
+            }
             is MainAction.ShareQRCode -> {
                 val bitmap = dataSource.share2QRCode(action.guid)
                 _uiState.update { it.copy(shareQRCodeBitmap = bitmap) }
@@ -282,7 +301,8 @@ class MainViewModel(
             ServersCache(
                 guid = guid,
                 profile = profile.copy(),
-                testDelayMillis = affiliation?.testDelayMillis ?: 0L
+                testDelayMillis = affiliation?.testDelayMillis ?: 0L,
+                locked = affiliation?.locked ?: false,
             )
         }
 
@@ -529,6 +549,115 @@ class MainViewModel(
                 }
             }
         }
+    }
+
+    // ---------- Profile & subscription-group locks ----------
+    fun isProfileLocked(guid: String): Boolean = dataSource.isProfileLocked(guid)
+
+    /**
+     * Returns the group-lock denial reason for a profile, or null when the profile's
+     * subscription group accepts connections.
+     */
+    fun lockDeniedReasonFor(guid: String?): LockEvaluator.DeniedReason? {
+        val currentGuid = guid ?: return null
+        val profile = dataSource.decodeServerConfig(currentGuid) ?: return null
+        val lock = dataSource.decodeGroupLock(profile.subscriptionId)
+        return (LockEvaluator.evaluate(lock) as? LockEvaluator.Decision.Denied)?.reason
+    }
+
+    /**
+     * Shows the lock-denied notice dialog for [reason] without starting the service.
+     */
+    fun notifyLockDenied(reason: LockEvaluator.DeniedReason) {
+        _uiState.update {
+            it.copy(lockNotice = LockDeniedMessage.resolve(localizedContext, reason))
+        }
+    }
+
+    private fun toggleProfileLock(guid: String) {
+        val locked = !dataSource.isProfileLocked(guid)
+        dataSource.setProfileLocked(guid, locked)
+        toastSuccess(if (locked) R.string.toast_profile_locked else R.string.toast_profile_unlocked)
+    }
+
+    private fun exportLockedAsync() {
+        launchLoading {
+            withContext(ioDispatcher) {
+                try {
+                    val groupId = uiState.value.selectedGroupId
+                    val list = if (groupId.isEmpty() && keywordFilter.isEmpty()) {
+                        dataSource.getServerGuidList("")
+                    } else {
+                        currentServers().map { it.guid }
+                    }
+                    val text = dataSource.exportLockedPackage(list)
+                    if (text.isBlank()) {
+                        toastError(R.string.toast_no_locked_configs)
+                        return@withContext
+                    }
+                    dataSource.setClipboard(text)
+                    toastSuccess(R.string.title_export_locked)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (e: Exception) {
+                    LogUtil.e(AppConfig.TAG, "Export locked failed", e)
+                    toastError(R.string.toast_failure)
+                }
+            }
+        }
+    }
+
+    private fun openGroupLockEditor(groupId: String) {
+        val groupName = dataSource.getSubscriptions()
+            .firstOrNull { it.guid == groupId }
+            ?.subscription
+            ?.remarks
+            .orEmpty()
+            .ifBlank { groupId }
+        val lock = dataSource.decodeGroupLock(groupId)
+        _uiState.update {
+            it.copy(
+                groupLockEditor = GroupLockEditorUi(
+                    groupId = groupId,
+                    groupName = groupName,
+                    enabled = lock.enabled,
+                    expiryEpochDay = lock.expiryEpochDay,
+                    dataLimitBytes = lock.dataLimitBytes,
+                    usedBytes = lock.usedBytes,
+                )
+            )
+        }
+    }
+
+    private fun saveGroupLock(action: MainAction.SaveGroupLock) {
+        if (action.enabled && action.expiryEpochDay == 0L && action.dataLimitBytes == 0L) {
+            toastError(R.string.lock_group_require_condition)
+            return
+        }
+        if (action.dataLimitBytes < 0L) {
+            toastError(R.string.lock_group_require_condition)
+            return
+        }
+        val usedBytes = dataSource.decodeGroupLock(action.groupId).usedBytes
+        dataSource.encodeGroupLock(
+            action.groupId,
+            GroupLockConfig(
+                enabled = action.enabled,
+                expiryEpochDay = action.expiryEpochDay,
+                dataLimitBytes = action.dataLimitBytes,
+                usedBytes = usedBytes,
+            )
+        )
+        _uiState.update { it.copy(groupLockEditor = null) }
+        toastSuccess(R.string.toast_save_success)
+    }
+
+    private fun resetGroupData(groupId: String) {
+        dataSource.resetGroupUsedBytes(groupId)
+        _uiState.update {
+            it.copy(groupLockEditor = it.groupLockEditor?.copy(usedBytes = 0L))
+        }
+        toastSuccess(R.string.toast_reset_success)
     }
 
     private fun removeAllServerAsync() {

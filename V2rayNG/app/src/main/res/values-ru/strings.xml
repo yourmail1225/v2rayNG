@@ -572,4 +572,26 @@
     <string name="openvpn_notification_authenticating">Аутентификация</string>
     <string name="openvpn_notification_configuring">Настройка туннеля</string>
 
+<string name="title_group_lock">Блокировка группы</string>
+    <string name="title_export_locked">Экспорт заблокированных профилей</string>
+    <string name="lock_profile">Заблокировать сервер</string>
+    <string name="unlock_profile">Разблокировать сервер</string>
+    <string name="acc_profile_locked">Заблокировано</string>
+    <string name="toast_profile_locked">Сервер заблокирован</string>
+    <string name="toast_profile_unlocked">Блокировка сервера снята</string>
+    <string name="toast_no_locked_configs">В текущей выборке нет заблокированных профилей</string>
+    <string name="lock_group_enable">Заблокировать эту группу</string>
+    <string name="lock_group_expiry_label">Срок действия</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">Лимит данных (МБ)</string>
+    <string name="lock_group_data_limit_placeholder">Оставьте пустым для безлимита</string>
+    <string name="lock_group_require_condition">Укажите срок действия или лимит данных, либо отключите блокировку</string>
+    <string name="lock_group_used_of_limit">Использовано %1$s из %2$s МБ</string>
+    <string name="lock_group_expired">Соединение заблокировано: срок действия блокировки этой группы истёк</string>
+    <string name="lock_group_data_exceeded">Соединение заблокировано: этой группой достигнут лимит данных</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_reset">Сбросить расход</string>
+    <string name="toast_save_success">Сохранено</string>
+    <string name="toast_reset_success">Расход сброшен</string>
+
 </resources>

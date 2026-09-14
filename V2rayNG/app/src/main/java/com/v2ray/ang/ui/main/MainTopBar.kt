@@ -37,6 +37,7 @@ fun MainTopBar(
     onSearchToggle: (Boolean) -> Unit,
     onMenuClick: () -> Unit,
     onAction: (MainAction) -> Unit,
+    showGroupLockEntry: Boolean,
     onMoreMenuAction: (MainMoreMenuAction) -> Unit
 ) {
     var showImportMenu by remember { mutableStateOf(false) }
@@ -107,7 +108,9 @@ fun MainTopBar(
                         .heightIn(max = maxMenuHeight)
                         .verticalScrollbar(moreMenuScrollState)
                 ) {
-                    MoreMenuContent { action ->
+                    MoreMenuContent(
+                        includeGroupLock = showGroupLockEntry
+                    ) { action ->
                         showMenu = false
                         onMoreMenuAction(action)
                     }

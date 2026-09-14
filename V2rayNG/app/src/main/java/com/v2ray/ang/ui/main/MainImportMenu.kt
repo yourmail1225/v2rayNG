@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.stringResource
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ProfileItem
@@ -38,26 +39,44 @@ enum class MainMoreMenuAction(@StringRes val labelRes: Int) {
     SortByTestResults(R.string.title_sort_by_test_results),
     TestAll(R.string.title_ping_all_server),
     TestAllRealPing(R.string.title_real_ping_all_server),
-    UpdateSubscriptions(R.string.title_sub_update)
+    UpdateSubscriptions(R.string.title_sub_update),
+    ExportLocked(R.string.title_export_locked),
+    LockGroup(R.string.title_group_lock)
 }
 
 internal enum class ServerMenuAction(
     @StringRes val labelRes: Int,
     val isShareAction: Boolean,
     val supportsComplexProfiles: Boolean,
+    val isLockAction: Boolean = false,
+    val requiresLockedProfile: Boolean = false,
 ) {
     ShareQRCode(R.string.share_method_qrcode, isShareAction = true, supportsComplexProfiles = false),
     ShareClipboard(R.string.share_method_clipboard, isShareAction = true, supportsComplexProfiles = false),
     ShareFullContent(R.string.share_method_full_content, isShareAction = true, supportsComplexProfiles = true),
     Edit(R.string.action_edit, isShareAction = false, supportsComplexProfiles = true),
     Delete(R.string.action_delete, isShareAction = false, supportsComplexProfiles = true),
+    Lock(R.string.lock_profile, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = false),
+    Unlock(R.string.unlock_profile, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = true),
 }
 
 internal fun serverMenuActions(
     isComplexProfile: Boolean,
     includeManagementActions: Boolean,
-): List<ServerMenuAction> = ServerMenuAction.entries.filter { action ->
-    (includeManagementActions || action.isShareAction) && (!isComplexProfile || action.supportsComplexProfiles)
+    isLocked: Boolean,
+): List<ServerMenuAction> {
+    val candidates = if (isLocked) {
+        // A locked profile may only be unlocked or deleted; its edit and share actions are removed.
+        ServerMenuAction.entries.filter {
+            (it.isLockAction && it.requiresLockedProfile) || it == ServerMenuAction.Delete
+        }
+    } else {
+        ServerMenuAction.entries.filter { !it.isLockAction }
+    }
+    return candidates.filter { action ->
+        (!isComplexProfile || action.supportsComplexProfiles) &&
+            (includeManagementActions || action.isShareAction)
+    }
 }
 
 @Composable
@@ -68,8 +87,13 @@ fun ImportMenuContent(onAction: (MainAction) -> Unit) = AppDropdownMenuItems(
 )
 
 @Composable
-fun MoreMenuContent(onSelected: (MainMoreMenuAction) -> Unit) = AppDropdownMenuItems(
-    items = MainMoreMenuAction.entries,
+fun MoreMenuContent(
+    includeGroupLock: Boolean,
+    onSelected: (MainMoreMenuAction) -> Unit,
+) = AppDropdownMenuItems(
+    items = MainMoreMenuAction.entries.filter { entry ->
+        entry != MainMoreMenuAction.LockGroup || includeGroupLock
+    },
     labelRes = { it.labelRes },
     onSelected = onSelected
 )
@@ -79,6 +103,7 @@ fun ShareMethodDialog(
     guid: String,
     profile: ProfileItem,
     more: Boolean,
+    isLocked: Boolean,
     onDismiss: () -> Unit,
     onAction: (MainAction) -> Unit,
     onRemove: (String) -> Unit,
@@ -86,7 +111,12 @@ fun ShareMethodDialog(
     val menuActions = serverMenuActions(
         isComplexProfile = profile.configType.isComplexType(),
         includeManagementActions = more,
+        isLocked = isLocked,
     )
+    if (menuActions.isEmpty()) {
+        LaunchedEffect(Unit) { onDismiss() }
+        return
+    }
     SelectListDialog(
         options = menuActions,
         optionText = { stringResource(it.labelRes) },
@@ -98,6 +128,8 @@ fun ShareMethodDialog(
                 ServerMenuAction.ShareFullContent -> onAction(MainAction.ShareFullContent(guid))
                 ServerMenuAction.Edit -> onAction(MainAction.EditServer(guid, profile))
                 ServerMenuAction.Delete -> onRemove(guid)
+                ServerMenuAction.Lock,
+                ServerMenuAction.Unlock -> onAction(MainAction.ToggleProfileLock(guid))
             }
         },
         onDismiss = onDismiss

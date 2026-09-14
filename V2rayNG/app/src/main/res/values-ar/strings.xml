@@ -576,4 +576,26 @@
     <string name="openvpn_notification_authenticating">جارٍ المصادقة</string>
     <string name="openvpn_notification_configuring">جارٍ إعداد النفق</string>
 
+<string name="title_group_lock">قفل المجموعة</string>
+    <string name="title_export_locked">تصدير الملفات المقفلة</string>
+    <string name="lock_profile">قفل الخادم</string>
+    <string name="unlock_profile">إلغاء قفل الخادم</string>
+    <string name="acc_profile_locked">مقفل</string>
+    <string name="toast_profile_locked">تم قفل الخادم</string>
+    <string name="toast_profile_unlocked">تم إلغاء قفل الخادم</string>
+    <string name="toast_no_locked_configs">لا توجد ملفات مقفلة في التحديد الحالي</string>
+    <string name="lock_group_enable">قفل هذه المجموعة</string>
+    <string name="lock_group_expiry_label">تاريخ الانتهاء</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">حد البيانات (MB)</string>
+    <string name="lock_group_data_limit_placeholder">اتركه فارغًا لعدم وجود حد</string>
+    <string name="lock_group_require_condition">فعّل تاريخ انتهاء أو حد بيانات، أو عطّل القفل</string>
+    <string name="lock_group_used_of_limit">تم استخدام %1$s من %2$s ميجابايت</string>
+    <string name="lock_group_expired">تم حظر الاتصال: انتهى قفل هذه المجموعة</string>
+    <string name="lock_group_data_exceeded">تم حظر الاتصال: وصلت هذه المجموعة إلى حد البيانات</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_reset">إعادة تعيين الاستخدام</string>
+    <string name="toast_save_success">تم الحفظ</string>
+    <string name="toast_reset_success">تمت إعادة تعيين الاستخدام</string>
+
 </resources>

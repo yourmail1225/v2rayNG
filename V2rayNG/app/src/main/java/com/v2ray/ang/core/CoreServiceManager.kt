@@ -29,6 +29,8 @@ import com.v2ray.ang.service.DialerNativeService
 import com.v2ray.ang.service.DialerWebviewService
 import com.v2ray.ang.service.NetworkMonitor
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.LockDeniedMessage
+import com.v2ray.ang.util.LockEvaluator
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -46,6 +48,8 @@ import java.net.InetSocketAddress
 
 object CoreServiceManager {
 
+    private const val GROUP_USAGE_TICK_MS = 3000L
+
     private val coreController: CoreController = CoreNativeManager.newCoreController(CoreCallback())
     private val mMsgReceive = ReceiveMessageHandler()
     private var currentConfig: ProfileItem? = null
@@ -53,9 +57,13 @@ object CoreServiceManager {
     private var browserDialer: IDialerService? = null
     private var networkMonitor: NetworkMonitor? = null
     private val connectionTestScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val groupUsageScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile
     private var isReloading = false
+
+    @Volatile
+    private var dataLimitNoticeShown = false
 
     /** Tun descriptor the core was started with, null in the proxy only and root run modes. */
     private var currentVpnInterface: ParcelFileDescriptor? = null
@@ -100,8 +108,27 @@ object CoreServiceManager {
             return false
         }
 
+        val runningConfig = MmkvManager.getSelectServer()?.let { MmkvManager.decodeServerConfig(it) }
+        val deniedReason = runningConfig?.let { config ->
+            val decision = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(config.subscriptionId))
+            (decision as? LockEvaluator.Decision.Denied)?.reason
+        }
+        if (deniedReason != null) {
+            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group lock denies ${runningConfig.remarks}")
+            MessageHelper.sendMsg2UI(
+                service,
+                AppConfig.MSG_STATE_LOCK_DENIED,
+                LockDeniedMessage.resolve(service, deniedReason)
+            )
+            MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, "")
+            NotificationManager.cancelNotification()
+            return false
+        }
+
         try {
+            dataLimitNoticeShown = false
             doStartCoreLoop(service, vpnInterface)
+            scheduleGroupUsageAccumulation()
             return true
         } catch (e: Exception) {
             val message = e.message?.takeUnless { it.isBlank() } ?: e.javaClass.simpleName
@@ -191,6 +218,7 @@ object CoreServiceManager {
      */
     fun stopCoreLoop(): Boolean {
         connectionTestScope.coroutineContext.cancelChildren()
+        groupUsageScope.coroutineContext.cancelChildren()
         val service = getService() ?: return false
 
         networkMonitor?.unregister()
@@ -276,6 +304,56 @@ object CoreServiceManager {
             false
         } finally {
             isReloading = false
+        }
+    }
+
+    /**
+     * Consumes [bytes] against the running group's lock and, when the data limit is
+     * reached, notifies the UI and stops the session.
+     *
+     * @param subscriptionId The group to charge, or null to use the running config's group.
+     *                       Passed explicitly by the OpenVPN engine which keeps no [currentConfig].
+     */
+    fun accumulateGroupDataUsage(bytes: Long, subscriptionId: String? = null) {
+        if (bytes <= 0L) return
+        val groupId = subscriptionId ?: currentConfig?.subscriptionId ?: return
+        val lock = MmkvManager.decodeGroupLock(groupId)
+        if (!lock.enabled || lock.dataLimitBytes <= 0L) return
+
+        val used = MmkvManager.addGroupUsedBytes(groupId, bytes)
+        if (used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
+            dataLimitNoticeShown = true
+            val service = getService() ?: return
+            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group data limit reached, stopping")
+            MessageHelper.sendMsg2UI(
+                service,
+                AppConfig.MSG_STATE_LOCK_DENIED,
+                LockDeniedMessage.resolve(service, LockEvaluator.DeniedReason.DATA_LIMIT_REACHED)
+            )
+            MessageHelper.sendMsg2Service(service, AppConfig.MSG_STATE_STOP, "")
+        }
+    }
+
+    /**
+     * Starts the group-usage accumulator for the xray run modes. The notification speed
+     * loop already consumes the resetting core counters when the speed display is on, so
+     * this coroutine only runs when the speed display is off to avoid double counting.
+     */
+    private fun scheduleGroupUsageAccumulation() {
+        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) == true) return
+        groupUsageScope.cancelChildren()
+        groupUsageScope.launch {
+            while (true) {
+                delay(GROUP_USAGE_TICK_MS)
+                if (!isRunning()) return@launch
+                val groupId = currentConfig?.subscriptionId ?: continue
+                val lock = MmkvManager.decodeGroupLock(groupId)
+                if (!lock.enabled || lock.dataLimitBytes <= 0L) continue
+                val total = queryAllOutboundTrafficStats()
+                    .filter { it.tag != AppConfig.TAG_DIRECT && it.tag != AppConfig.TAG_BLOCKED }
+                    .sumOf { it.value }
+                if (total > 0L) accumulateGroupDataUsage(total)
+            }
         }
     }
 

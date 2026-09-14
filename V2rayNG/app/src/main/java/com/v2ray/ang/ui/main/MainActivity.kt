@@ -164,8 +164,21 @@ class MainActivity : HelperBaseComponentActivity() {
         if (mainViewModel.uiState.value.isRunning) {
             LauncherManager.stopService(this)
         } else {
+            if (requestLockGuard()) return
             requestServiceStart()
         }
+    }
+
+    /**
+     * Refuses to start a connection when the selected profile's group is expired or
+     * over its data limit, showing the lock notice instead.
+     */
+    private fun requestLockGuard(): Boolean {
+        val selected = mainViewModel.uiState.value.selectedGuid
+        val reason = mainViewModel.lockDeniedReasonFor(selected)
+        if (reason == null) return false
+        mainViewModel.notifyLockDenied(reason)
+        return true
     }
 
     private fun requestServiceStart() {
@@ -184,6 +197,7 @@ class MainActivity : HelperBaseComponentActivity() {
     }
 
     private fun startV2Ray() {
+        if (requestLockGuard()) return
         if (mainViewModel.uiState.value.selectedGuid.isNullOrEmpty()) {
             toast(R.string.title_file_chooser)
             return
@@ -262,6 +276,10 @@ class MainActivity : HelperBaseComponentActivity() {
     }
 
     private fun editServer(guid: String, profile: ProfileItem) {
+        if (mainViewModel.isProfileLocked(guid)) {
+            toastError(R.string.toast_failure)
+            return
+        }
         val activityClass = when (profile.configType) {
             EConfigType.CUSTOM -> ServerCustomConfigActivity::class.java
             EConfigType.POLICYGROUP -> ServerGroupActivity::class.java
@@ -287,6 +305,11 @@ class MainActivity : HelperBaseComponentActivity() {
     }
 
     private fun setSelectServer(guid: String) {
+        val reason = mainViewModel.lockDeniedReasonFor(guid)
+        if (reason != null) {
+            mainViewModel.notifyLockDenied(reason)
+            return
+        }
         val selected = mainViewModel.uiState.value.selectedGuid
         if (guid != selected) {
             mainViewModel.updateSelectedGuid(guid)

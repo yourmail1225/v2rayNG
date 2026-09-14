@@ -568,4 +568,26 @@
     <string name="openvpn_notification_authenticating">در حال احراز هویت</string>
     <string name="openvpn_notification_configuring">در حال پیکربندی تونل</string>
 
+<string name="title_group_lock">قفل گروه</string>
+    <string name="title_export_locked">خروجی پروفایل‌های قفل‌شده</string>
+    <string name="lock_profile">قفل کردن سرور</string>
+    <string name="unlock_profile">باز کردن قفل سرور</string>
+    <string name="acc_profile_locked">قفل‌شده</string>
+    <string name="toast_profile_locked">سرور قفل شد</string>
+    <string name="toast_profile_unlocked">قفل سرور باز شد</string>
+    <string name="toast_no_locked_configs">در بخش انتخاب‌شده پروفایل قفل‌شده‌ای وجود ندارد</string>
+    <string name="lock_group_enable">قفل کردن این گروه</string>
+    <string name="lock_group_expiry_label">تاریخ انقضا</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">محدودیت مصرف (MB)</string>
+    <string name="lock_group_data_limit_placeholder">برای عدم محدودیت خالی بگذارید</string>
+    <string name="lock_group_require_condition">تاریخ انقضا یا محدودیت مصرف را فعال کنید یا قفل را غیرفعال کنید</string>
+    <string name="lock_group_used_of_limit">%1$s از %2$s مگابایت مصرف شده</string>
+    <string name="lock_group_expired">اتصال مسدود شد: قفل این گروه به پایان رسیده است</string>
+    <string name="lock_group_data_exceeded">اتصال مسدود شد: سهمیه مصرف این گروه به پایان رسیده است</string>
+    <string name="action_save">ذخیره</string>
+    <string name="action_reset">بازنشانی مصرف</string>
+    <string name="toast_save_success">ذخیره شد</string>
+    <string name="toast_reset_success">مصرف بازنشانی شد</string>
+
 </resources>

@@ -568,4 +568,26 @@
     <string name="openvpn_notification_authenticating">প্রমাণীকরণ হচ্ছে</string>
     <string name="openvpn_notification_configuring">টানেল কনফিগার হচ্ছে</string>
 
+<string name="title_group_lock">গ্রুপ লক</string>
+    <string name="title_export_locked">লক করা প্রোফাইল এক্সপোর্ট</string>
+    <string name="lock_profile">সার্ভার লক করুন</string>
+    <string name="unlock_profile">সার্ভারের লক খুলুন</string>
+    <string name="acc_profile_locked">লক করা</string>
+    <string name="toast_profile_locked">সার্ভার লক করা হয়েছে</string>
+    <string name="toast_profile_unlocked">সার্ভারের লক খোলা হয়েছে</string>
+    <string name="toast_no_locked_configs">বর্তমান নির্বাচনে কোনো লক করা প্রোফাইল নেই</string>
+    <string name="lock_group_enable">এই গ্রুপটি লক করুন</string>
+    <string name="lock_group_expiry_label">মেয়াদ শেষ হওয়ার তারিখ</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">ডেটা সীমা (MB)</string>
+    <string name="lock_group_data_limit_placeholder">সীমা ছাড়া ফাঁকা রাখুন</string>
+    <string name="lock_group_require_condition">একটি মেয়াদ বা ডেটা সীমা সক্রিয় করুন, অথবা লকটি অক্ষম করুন</string>
+    <string name="lock_group_used_of_limit">%1$s এর মধ্যে %2$s MB ব্যবহৃত</string>
+    <string name="lock_group_expired">সংযোগ ব্লক হয়েছে: এই গ্রুপের লকের মেয়াদ শেষ হয়েছে</string>
+    <string name="lock_group_data_exceeded">সংযোগ ব্লক হয়েছে: এই গ্রুপ ডেটা সীমায় পৌঁছেছে</string>
+    <string name="action_save">সংরক্ষণ</string>
+    <string name="action_reset">ব্যবহার রিসেট করুন</string>
+    <string name="toast_save_success">সংরক্ষিত হয়েছে</string>
+    <string name="toast_reset_success">ব্যবহার রিসেট হয়েছে</string>
+
 </resources>

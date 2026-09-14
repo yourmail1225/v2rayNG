@@ -19,6 +19,7 @@ import com.v2ray.ang.AppConfig.TAG
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.dto.entities.AssetUrlCache
 import com.v2ray.ang.dto.entities.AssetUrlItem
+import com.v2ray.ang.dto.entities.GroupLockConfig
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.RulesetItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
@@ -502,6 +503,31 @@ object MmkvManager {
     }
 
     /**
+     * Returns whether the server profile is locked against edit and share.
+     *
+     * @param guid The server GUID.
+     * @return True when the profile is locked.
+     */
+    fun isProfileLocked(guid: String): Boolean {
+        return decodeServerAffiliationInfo(guid)?.locked == true
+    }
+
+    /**
+     * Sets the locked state of a server profile.
+     *
+     * @param guid The server GUID.
+     * @param locked Whether the profile is locked.
+     */
+    fun encodeProfileLocked(guid: String, locked: Boolean) {
+        if (guid.isBlank()) {
+            return
+        }
+        val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        aff.locked = locked
+        serverAffStorage.encode(guid, JsonUtil.toJson(aff))
+    }
+
+    /**
      * Removes all server configurations.
      *
      * @return The number of server configurations removed.
@@ -664,6 +690,7 @@ object MmkvManager {
      */
     fun removeSubscription(subid: String) {
         subStorage.remove(subid)
+        subStorage.remove(groupLockKey(subid))
         val subsList = decodeSubsList()
         subsList.remove(subid)
         encodeSubsList(subsList)
@@ -697,6 +724,57 @@ object MmkvManager {
     fun decodeSubscription(subscriptionId: String): SubscriptionItem? {
         val json = subStorage.decodeString(subscriptionId) ?: return null
         return JsonUtil.fromJsonSafe(json, SubscriptionItem::class.java)
+    }
+
+    private fun groupLockKey(subscriptionId: String): String {
+        return "LOCK_${getSubscriptionId(subscriptionId)}"
+    }
+
+    /**
+     * Decodes the group lock configuration for a subscription.
+     *
+     * @param subscriptionId The subscription ID.
+     * @return The group lock configuration (defaults when unset).
+     */
+    fun decodeGroupLock(subscriptionId: String): GroupLockConfig {
+        val json = subStorage.decodeString(groupLockKey(subscriptionId))
+        return JsonUtil.fromJsonSafe(json, GroupLockConfig::class.java) ?: GroupLockConfig()
+    }
+
+    /**
+     * Encodes the group lock configuration for a subscription.
+     *
+     * @param subscriptionId The subscription ID.
+     * @param config The group lock configuration.
+     */
+    fun encodeGroupLock(subscriptionId: String, config: GroupLockConfig) {
+        subStorage.encode(groupLockKey(subscriptionId), JsonUtil.toJson(config))
+    }
+
+    /**
+     * Adds consumed data to the group lock usage counter.
+     *
+     * @param subscriptionId The subscription ID.
+     * @param bytes The bytes consumed since the last query.
+     * @return The updated used-byte counter.
+     */
+    fun addGroupUsedBytes(subscriptionId: String, bytes: Long): Long {
+        if (bytes <= 0L) return decodeGroupLock(subscriptionId).usedBytes
+        val lock = decodeGroupLock(subscriptionId)
+        lock.usedBytes += bytes
+        encodeGroupLock(subscriptionId, lock)
+        return lock.usedBytes
+    }
+
+    /**
+     * Resets the group lock usage counter.
+     *
+     * @param subscriptionId The subscription ID.
+     */
+    fun resetGroupUsedBytes(subscriptionId: String) {
+        val lock = decodeGroupLock(subscriptionId)
+        lock.usedBytes = 0L
+        encodeGroupLock(subscriptionId, lock)
     }
 
     /**

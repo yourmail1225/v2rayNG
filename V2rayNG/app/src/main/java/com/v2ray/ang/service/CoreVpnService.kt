@@ -25,6 +25,8 @@ import com.v2ray.ang.handler.NotificationManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.root.RootLanSharing
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.LockDeniedMessage
+import com.v2ray.ang.util.LockEvaluator
 import com.v2ray.ang.util.Utils
 import java.lang.ref.SoftReference
 import java.util.concurrent.atomic.AtomicBoolean
@@ -79,9 +81,27 @@ class CoreVpnService : VpnService(), ServiceControl {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         NotificationManager.ensureForeground()
+        // A locked subscription group must not connect through any entry point, including
+        // the always-on restart path and the OpenVPN dispatch below.
+        val mainGuid = MmkvManager.getSelectServer()
+        val mainConfig = mainGuid?.let { MmkvManager.decodeServerConfig(it) }
+        val deniedReason = mainConfig?.let { config ->
+            val decision = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(config.subscriptionId))
+            (decision as? LockEvaluator.Decision.Denied)?.reason
+        }
+        if (deniedReason != null) {
+            LogUtil.i(AppConfig.TAG, "StartCore-VPN: Group lock denies connection")
+            MessageHelper.sendMsg2UI(
+                this,
+                AppConfig.MSG_STATE_LOCK_DENIED,
+                LockDeniedMessage.resolve(this, deniedReason)
+            )
+            stopAllService()
+            stopSelf()
+            return START_NOT_STICKY
+        }
         // Check if the current active profile is an OpenVPN config.
         // If so, hand the raw .ovpn content to the dedicated OpenVPN engine service.
-        val mainGuid = MmkvManager.getSelectServer()
         if (!mainGuid.isNullOrEmpty()) {
             val profile = MmkvManager.decodeServerConfig(mainGuid)
             val raw = MmkvManager.decodeServerRaw(mainGuid) ?: ""

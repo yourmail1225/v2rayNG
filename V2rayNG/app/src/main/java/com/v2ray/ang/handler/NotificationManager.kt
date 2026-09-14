@@ -259,6 +259,9 @@ object NotificationManager {
         }
 
         val proxyTotal = proxyUplink + proxyDownlink
+        // Feed the same already-consumed deltas into the group data limit so both the
+        // speed display and the usage counter read each core counter exactly once.
+        CoreServiceManager.accumulateGroupDataUsage(proxyTotal)
         val directTotal = directUplink + directDownlink
         val zeroSpeed = proxyTotal + directTotal == 0L
         if (!zeroSpeed || !lastZeroSpeed) {

@@ -73,8 +73,8 @@ fun GroupPagerPage(
     lazyGridStates: MutableMap<String, LazyGridState>,
     onSelectServer: (String) -> Unit,
     onEditServer: (String, ProfileItem) -> Unit,
-    onShareServer: (String, ProfileItem) -> Unit,
-    onMoreServer: (String, ProfileItem) -> Unit,
+    onShareServer: (String, ProfileItem, Boolean) -> Unit,
+    onMoreServer: (String, ProfileItem, Boolean) -> Unit,
     onRemoveServer: (String) -> Unit,
     contentPadding: PaddingValues
 ) {
@@ -119,8 +119,8 @@ fun GroupPagerPage(
 private class ServerRowActions(
     val select: (String) -> Unit,
     val edit: (String, ProfileItem) -> Unit,
-    val share: (String, ProfileItem) -> Unit,
-    val more: (String, ProfileItem) -> Unit,
+    val share: (String, ProfileItem, Boolean) -> Unit,
+    val more: (String, ProfileItem, Boolean) -> Unit,
     val remove: (String) -> Unit,
 )
 
@@ -314,13 +314,19 @@ private fun ServerListItem(
     } else {
         null
     }
+    val lockStateDescription = if (row.locked) {
+        stringResource(R.string.acc_profile_locked)
+    } else {
+        null
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .semantics {
-                if (selectedStateDescription != null) {
-                    stateDescription = selectedStateDescription
+                val states = listOfNotNull(selectedStateDescription, lockStateDescription)
+                if (states.isNotEmpty()) {
+                    stateDescription = states.joinToString(", ")
                 }
             }
             .clickable { actions.select(row.guid) }
@@ -352,15 +358,32 @@ private fun ServerListItem(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(row.remarks, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(lineBreak = LineBreak.Paragraph), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (doubleColumnDisplay) {
-                    IconButton(onClick = { actions.more(row.guid, row.profile) }, Modifier.size(36.dp)) {
+                    IconButton(onClick = { actions.more(row.guid, row.profile, row.locked) }, Modifier.size(36.dp)) {
                         Icon(
                             painterResource(R.drawable.ic_more_vert_24dp),
                             stringResource(R.string.acc_more),
                             Modifier.size(24.dp)
                         )
                     }
+                } else if (row.locked) {
+                    // A locked profile cannot be edited or shared; the lock button opens the
+                    // menu holding the Unlock and Delete actions, which also marks the row.
+                    IconButton(onClick = { actions.more(row.guid, row.profile, true) }, Modifier.size(36.dp)) {
+                        Icon(
+                            painterResource(R.drawable.ic_lock_24dp),
+                            stringResource(R.string.unlock_profile),
+                            Modifier.size(24.dp)
+                        )
+                    }
+                    IconButton(onClick = { actions.remove(row.guid) }, Modifier.size(36.dp)) {
+                        Icon(
+                            painterResource(R.drawable.ic_delete_24dp),
+                            stringResource(R.string.acc_delete),
+                            Modifier.size(24.dp)
+                        )
+                    }
                 } else {
-                    IconButton(onClick = { actions.share(row.guid, row.profile) }, Modifier.size(36.dp)) {
+                    IconButton(onClick = { actions.share(row.guid, row.profile, false) }, Modifier.size(36.dp)) {
                         Icon(
                             painterResource(R.drawable.ic_share_24dp),
                             stringResource(R.string.title_configuration_share),

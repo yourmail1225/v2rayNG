@@ -59,10 +59,11 @@ fun MainScreen(
     var showDelInvalidConfirm by remember { mutableStateOf(false) }
     var showRemoveConfirm by remember { mutableStateOf<String?>(null) }
 
-    var shareTarget by remember { mutableStateOf<Triple<String, ProfileItem, Boolean>?>(null) }
+    var shareTarget by remember { mutableStateOf<ShareMethodTarget?>(null) }
     val removeServer: (String) -> Unit = { guid ->
         if (confirmRemove) showRemoveConfirm = guid else onAction(MainAction.RemoveServer(guid))
     }
+    val showGroupLockEntry = uiState.selectedGroupId.isNotEmpty()
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -116,14 +117,37 @@ fun MainScreen(
     )
 
     if (shareTarget != null) {
-        val (guid, profile, more) = shareTarget!!
         ShareMethodDialog(
-            guid = guid,
-            profile = profile,
-            more = more,
+            guid = shareTarget!!.guid,
+            profile = shareTarget!!.profile,
+            more = shareTarget!!.more,
+            isLocked = shareTarget!!.isLocked,
             onDismiss = { shareTarget = null },
             onAction = onAction,
             onRemove = removeServer,
+        )
+    }
+    uiState.lockNotice?.let { notice ->
+        LockDeniedNoticeDialog(
+            message = notice,
+            onDismiss = { onAction(MainAction.DismissLockNotice) }
+        )
+    }
+    uiState.groupLockEditor?.let { editor ->
+        GroupLockEditorDialog(
+            editor = editor,
+            onDismiss = { onAction(MainAction.DismissGroupLockEditor) },
+            onSave = { enabled, expiryEpochDay, dataLimitBytes ->
+                onAction(
+                    MainAction.SaveGroupLock(
+                        groupId = editor.groupId,
+                        enabled = enabled,
+                        expiryEpochDay = expiryEpochDay,
+                        dataLimitBytes = dataLimitBytes,
+                    )
+                )
+            },
+            onReset = { onAction(MainAction.ResetGroupData(editor.groupId)) },
         )
     }
     if (shareQRCodeBitmap != null) {
@@ -161,6 +185,7 @@ fun MainScreen(
                     onSearchToggle = { show: Boolean -> showSearch = show },
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onAction = onAction,
+                    showGroupLockEntry = showGroupLockEntry,
                     onMoreMenuAction = { action ->
                         when (action) {
                             MainMoreMenuAction.RestartService -> onAction(MainAction.RestartService)
@@ -173,6 +198,10 @@ fun MainScreen(
                             MainMoreMenuAction.TestAll -> onAction(MainAction.TestAllServers)
                             MainMoreMenuAction.TestAllRealPing -> onAction(MainAction.TestRealAllServers)
                             MainMoreMenuAction.UpdateSubscriptions -> onAction(MainAction.UpdateSubscriptions)
+                            MainMoreMenuAction.ExportLocked -> onAction(MainAction.ExportLocked)
+                            MainMoreMenuAction.LockGroup -> onAction(
+                                MainAction.OpenGroupLockEditor(uiState.selectedGroupId)
+                            )
                         }
                     }
                 )
@@ -231,11 +260,11 @@ fun MainScreen(
                             lazyGridStates = lazyGridStates,
                             onSelectServer = { guid -> onAction(MainAction.SelectServer(guid)) },
                             onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
-                            onShareServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, false)
+                            onShareServer = { guid, profile, isLocked ->
+                                shareTarget = ShareMethodTarget(guid, profile, false, isLocked)
                             },
-                            onMoreServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, true)
+                            onMoreServer = { guid, profile, isLocked ->
+                                shareTarget = ShareMethodTarget(guid, profile, true, isLocked)
                             },
                             onRemoveServer = removeServer,
                             contentPadding = PaddingValues(
@@ -251,3 +280,10 @@ fun MainScreen(
         }
     }
 }
+
+private data class ShareMethodTarget(
+    val guid: String,
+    val profile: ProfileItem,
+    val more: Boolean,
+    val isLocked: Boolean,
+)

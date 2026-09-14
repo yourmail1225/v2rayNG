@@ -14,6 +14,18 @@ sealed interface MainStatus {
 }
 
 /**
+ * Group lock editor state, opened from the more menu for the selected subscription.
+ */
+data class GroupLockEditorUi(
+    val groupId: String,
+    val groupName: String,
+    val enabled: Boolean = false,
+    val expiryEpochDay: Long = 0L,
+    val dataLimitBytes: Long = 0L,
+    val usedBytes: Long = 0L,
+)
+
+/**
  * Main UI state
  */
 data class MainUiState(
@@ -26,7 +38,9 @@ data class MainUiState(
     val locateTarget: LocateTarget? = null,
     val confirmRemove: Boolean = false,
     val doubleColumnDisplay: Boolean = false,
-    val shareQRCodeBitmap: android.graphics.Bitmap? = null
+    val shareQRCodeBitmap: android.graphics.Bitmap? = null,
+    val lockNotice: String? = null,
+    val groupLockEditor: GroupLockEditorUi? = null
 )
 
 /**
@@ -66,6 +80,19 @@ sealed interface MainAction {
     data object DismissQRCodeDialog : MainAction
 
     data class ImportBatchConfig(val configText: String) : MainAction
+
+    data class ToggleProfileLock(val guid: String) : MainAction
+    data object ExportLocked : MainAction
+    data class OpenGroupLockEditor(val groupId: String) : MainAction
+    data class SaveGroupLock(
+        val groupId: String,
+        val enabled: Boolean,
+        val expiryEpochDay: Long,
+        val dataLimitBytes: Long,
+    ) : MainAction
+    data class ResetGroupData(val groupId: String) : MainAction
+    data object DismissGroupLockEditor : MainAction
+    data object DismissLockNotice : MainAction
 
     data object LocateHandled : MainAction
 }

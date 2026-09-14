@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import com.v2ray.ang.dto.SubscriptionUpdateResult
 import com.v2ray.ang.dto.TestServiceMessage
+import com.v2ray.ang.dto.entities.GroupLockConfig
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import com.v2ray.ang.dto.entities.SubscriptionCache
@@ -32,6 +33,16 @@ interface MainDataSource : Closeable {
     fun decodeServerConfig(guid: String): ProfileItem?
     fun decodeServerRaw(guid: String): String?
     fun decodeAffiliationInfo(guid: String): ServerAffiliationInfo?
+
+    fun isProfileLocked(guid: String): Boolean
+    fun setProfileLocked(guid: String, locked: Boolean)
+
+    fun decodeGroupLock(groupId: String): GroupLockConfig
+    fun encodeGroupLock(groupId: String, config: GroupLockConfig)
+    fun resetGroupUsedBytes(groupId: String)
+
+    fun exportLockedPackage(guids: List<String>): String
+    fun setClipboard(text: String)
 
     fun encodeServerList(guids: List<String>, groupId: String)
 

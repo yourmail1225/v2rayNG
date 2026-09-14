@@ -568,4 +568,26 @@
     <string name="openvpn_notification_authenticating">Authenticating</string>
     <string name="openvpn_notification_configuring">Configuring tunnel</string>
 
+    <string name="title_group_lock">Group lock</string>
+    <string name="title_export_locked">Export locked profiles</string>
+    <string name="lock_profile">Lock profile</string>
+    <string name="unlock_profile">Unlock profile</string>
+    <string name="acc_profile_locked">Locked</string>
+    <string name="toast_profile_locked">Profile locked</string>
+    <string name="toast_profile_unlocked">Profile unlocked</string>
+    <string name="toast_no_locked_configs">No locked profiles in the current selection</string>
+    <string name="lock_group_enable">Lock this group</string>
+    <string name="lock_group_expiry_label">Expiration date</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">Data limit (MB)</string>
+    <string name="lock_group_data_limit_placeholder">Leave empty for no limit</string>
+    <string name="lock_group_require_condition">Enable an expiration date or a data limit, or disable the lock</string>
+    <string name="lock_group_used_of_limit">%1$s MB used of %2$s MB</string>
+    <string name="lock_group_expired">Connection blocked: the lock for this subscription group has expired.</string>
+    <string name="lock_group_data_exceeded">Connection blocked: this subscription group has reached its data limit.</string>
+    <string name="action_save">Save</string>
+    <string name="action_reset">Reset usage</string>
+    <string name="toast_save_success">Saved</string>
+    <string name="toast_reset_success">Usage reset</string>
+
 </resources>

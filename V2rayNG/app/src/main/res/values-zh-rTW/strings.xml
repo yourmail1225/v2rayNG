@@ -566,4 +566,26 @@
     <string name="openvpn_notification_authenticating">正在驗證</string>
     <string name="openvpn_notification_configuring">正在設定隧道</string>
 
+<string name="title_group_lock">群組鎖定</string>
+    <string name="title_export_locked">匯出已鎖定設定</string>
+    <string name="lock_profile">鎖定伺服器</string>
+    <string name="unlock_profile">解除鎖定伺服器</string>
+    <string name="acc_profile_locked">已鎖定</string>
+    <string name="toast_profile_locked">伺服器已鎖定</string>
+    <string name="toast_profile_unlocked">伺服器已解除鎖定</string>
+    <string name="toast_no_locked_configs">目前選取項目中沒有已鎖定設定</string>
+    <string name="lock_group_enable">鎖定此群組</string>
+    <string name="lock_group_expiry_label">到期日期</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">資料上限（MB）</string>
+    <string name="lock_group_data_limit_placeholder">留空則不限制</string>
+    <string name="lock_group_require_condition">請啟用到期日期或資料上限，或停用鎖定</string>
+    <string name="lock_group_used_of_limit">已使用 %1$s / %2$s MB</string>
+    <string name="lock_group_expired">連線已封鎖：此群組的鎖定已到期</string>
+    <string name="lock_group_data_exceeded">連線已封鎖：此群組已達資料上限</string>
+    <string name="action_save">儲存</string>
+    <string name="action_reset">重設用量</string>
+    <string name="toast_save_success">已儲存</string>
+    <string name="toast_reset_success">用量已重設</string>
+
 </resources>

@@ -12,7 +12,9 @@ import android.os.ParcelFileDescriptor
 import androidx.core.content.ContextCompat
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.enums.NotificationChannelType
+import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.helper.NotificationHelper
 import com.v2ray.ang.util.LogUtil
@@ -51,6 +53,10 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     private var lastTunCfg = OpenVpnTunConfig()
     private var lastNotificationTime = 0L
     private var stopReceiverRegistered = false
+    @Volatile
+    private var lastBytesIn = -1L
+    @Volatile
+    private var lastBytesOut = -1L
 
     /**
      * Handles the UI's app-internal MSG_STATE_STOP broadcast directly in this process so
@@ -110,6 +116,8 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
             savedConfig = rawConfig
             tunConfig = OpenVpnTunConfig()
             lastTunCfg = OpenVpnTunConfig()
+            lastBytesIn = -1L
+            lastBytesOut = -1L
 
             val socketPath = File(cacheDir, "mgmtsocket").absolutePath
             // A listener from a previous run may have left the AF_UNIX file behind;
@@ -491,6 +499,19 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     }
 
     override fun reportByteCount(bytesIn: Long, bytesOut: Long) {
+        if (lastBytesIn >= 0L && lastBytesOut >= 0L) {
+            val deltaIn = bytesIn.coerceAtLeast(0L) - lastBytesIn.coerceAtLeast(0L)
+            val deltaOut = bytesOut.coerceAtLeast(0L) - lastBytesOut.coerceAtLeast(0L)
+            val groupId = MmkvManager.getSelectServer()
+                ?.let { MmkvManager.decodeServerConfig(it)?.subscriptionId }
+            CoreServiceManager.accumulateGroupDataUsage(
+                (deltaIn + deltaOut).coerceAtLeast(0L),
+                groupId
+            )
+        }
+        lastBytesIn = bytesIn
+        lastBytesOut = bytesOut
+
         val now = System.currentTimeMillis()
         // Only refresh the notification once per second to limit binder traffic.
         if (now - lastNotificationTime < 1000) {

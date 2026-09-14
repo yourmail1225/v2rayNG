@@ -24,6 +24,7 @@ import com.v2ray.ang.fmt.VmessFmt
 import com.v2ray.ang.fmt.WireguardFmt
 import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LockedPackage
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.QRCodeDecoder
 import com.v2ray.ang.util.Utils
@@ -34,6 +35,7 @@ object AngConfigManager {
     private data class ParsedProfile(
         val profile: ProfileItem,
         val rawConfig: String? = null,
+        val locked: Boolean = false,
     )
 
     // Parser mapping for different config types (lazy initialized)
@@ -133,6 +135,7 @@ object AngConfigManager {
     fun shareFullContent2Clipboard(context: Context, guid: String?): Int {
         try {
             if (guid == null) return -1
+            if (MmkvManager.isProfileLocked(guid)) return -1
             val config = MmkvManager.decodeServerConfig(guid)
             // An OpenVPN profile shares its raw .ovpn content; the v2ray config builder
             // does not understand it.
@@ -162,6 +165,17 @@ object AngConfigManager {
      * @return The configuration string.
      */
     private fun shareConfig(guid: String): String {
+        if (MmkvManager.isProfileLocked(guid)) {
+            return ""
+        }
+        return shareConfigContent(guid)
+    }
+
+    /**
+     * Returns the share text of a configuration, bypassing the locked-state guard.
+     * Used only to build a locked package for exporting the profile to another device.
+     */
+    private fun shareConfigContent(guid: String): String {
         try {
             val config = MmkvManager.decodeServerConfig(guid) ?: return ""
 
@@ -196,42 +210,102 @@ object AngConfigManager {
      */
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
+            var lockedCount = 0
+            var importText = server
+            if (server != null) {
+                val lockedParsed = LockedPackage.parse(server)
+                if (lockedParsed.entries.isNotEmpty()) {
+                    lockedCount = lockedParsed.entries.sumOf { entry ->
+                        importLockedConfigContent(entry.content, subid, append)
+                    }
+                    importText = lockedParsed.remaining
+                }
+            }
+
             // OpenVPN .ovpn auto-detection & import
-            if (server.isOpenVpnConfig()) {
+            if (importText.isOpenVpnConfig()) {
                 val profile = ProfileItem(
                     configType = EConfigType.OPENVPN,
                     subscriptionId = subid,
                     remarks = "OpenVPN",
                 )
                 commitProfiles(
-                    configs = listOf(ParsedProfile(profile = profile, rawConfig = server)),
+                    configs = listOf(ParsedProfile(profile = profile, rawConfig = importText)),
                     subid = subid,
                     append = append,
                 )
-                return 1 to 0
+                return lockedCount + 1 to 0
             }
 
-            var count = parseBatchConfig(Utils.decode(server), subid, append)
+            var count = parseBatchConfig(Utils.decode(importText), subid, append)
             if (count <= 0) {
-                count = parseBatchConfig(server, subid, append)
+                count = parseBatchConfig(importText, subid, append)
             }
             if (count <= 0) {
-                count = parseCustomConfigServer(server, subid, append)
+                count = parseCustomConfigServer(importText, subid, append)
             }
 
-            var countSub = parseBatchSubscription(server)
+            var countSub = parseBatchSubscription(importText)
             if (countSub <= 0) {
-                countSub = parseBatchSubscription(Utils.decode(server))
+                countSub = parseBatchSubscription(Utils.decode(importText))
             }
             if (countSub > 0) {
                 updateConfigViaSubAll()
             }
 
-            count to countSub
+            lockedCount + count to countSub
         } catch (e: ProfileStorageException) {
             LogUtil.e(AppConfig.TAG, "Failed to store imported profiles", e)
             0 to 0
         }
+    }
+
+    /**
+     * Imports a single locked-package entry with the lock state preserved.
+     *
+     * @param content The config text (a shared URI line or a full OpenVPN file).
+     * @param subid The subscription ID.
+     * @param append Whether to append the configuration.
+     * @return The number of profiles imported.
+     */
+    private fun importLockedConfigContent(content: String, subid: String, append: Boolean): Int {
+        if (content.isOpenVpnConfig()) {
+            val profile = ProfileItem(
+                configType = EConfigType.OPENVPN,
+                subscriptionId = subid,
+                remarks = "OpenVPN",
+            )
+            commitProfiles(
+                configs = listOf(ParsedProfile(profile = profile, rawConfig = content, locked = true)),
+                subid = subid,
+                append = append,
+            )
+            return 1
+        }
+        var count = parseBatchConfig(Utils.decode(content), subid, append, locked = true)
+        if (count <= 0) {
+            count = parseBatchConfig(content, subid, append, locked = true)
+        }
+        if (count <= 0) {
+            count = parseCustomConfigServer(content, subid, append, locked = true)
+        }
+        return count
+    }
+
+    /**
+     * Exports every locked profile in [serverList] as a locked package.
+     *
+     * @param serverList The list of server GUIDs.
+     * @return The encoded locked package text, or an empty string when nothing is locked.
+     */
+    fun exportLockedPackage(serverList: List<String>): String {
+        val entries = serverList.mapNotNull { guid ->
+            if (!MmkvManager.isProfileLocked(guid)) return@mapNotNull null
+            val content = shareConfigContent(guid)
+            if (content.isBlank()) return@mapNotNull null
+            LockedPackage.LockedEntry(content)
+        }
+        return LockedPackage.encode(entries)
     }
     /**
      * Parses a batch of subscriptions.
@@ -268,7 +342,7 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return The number of configurations parsed.
      */
-    private fun parseBatchConfig(servers: String?, subid: String, append: Boolean): Int {
+    private fun parseBatchConfig(servers: String?, subid: String, append: Boolean, locked: Boolean = false): Int {
         try {
             if (servers == null) {
                 return 0
@@ -296,15 +370,19 @@ object AngConfigManager {
             val v2raynConfigs = V2rayNFmt.parse(v2raynLines, subid)
             val allConfigs = v2raynConfigs + configs
 
-            if (allConfigs.isNotEmpty()) {
+            val parsedProfiles = allConfigs.map { parsed ->
+                ParsedProfile(profile = parsed, locked = locked)
+            }
+
+            if (parsedProfiles.isNotEmpty()) {
                 commitProfiles(
-                    configs = allConfigs.map(::ParsedProfile),
+                    configs = parsedProfiles,
                     subid = subid,
                     append = append,
                 )
             }
 
-            return allConfigs.size
+            return parsedProfiles.size
         } catch (e: ProfileStorageException) {
             throw e
         } catch (e: Exception) {
@@ -327,11 +405,13 @@ object AngConfigManager {
     ) {
         val keyToProfile = linkedMapOf<String, ProfileItem>()
         val rawConfigs = mutableMapOf<String, String>()
+        val lockedKeys = mutableListOf<String>()
 
         configs.forEach { parsed ->
             val key = Utils.getUuid()
             keyToProfile[key] = parsed.profile
             parsed.rawConfig?.let { raw -> rawConfigs[key] = raw }
+            if (parsed.locked) lockedKeys.add(key)
         }
 
         MmkvManager.saveServerProfiles(
@@ -340,6 +420,9 @@ object AngConfigManager {
             subscriptionId = subid,
             append = append,
         )
+        lockedKeys.forEach { key ->
+            MmkvManager.encodeProfileLocked(key, true)
+        }
     }
 
     /**
@@ -350,7 +433,7 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return The number of configurations parsed.
      */
-    private fun parseCustomConfigServer(server: String?, subid: String, append: Boolean): Int {
+    private fun parseCustomConfigServer(server: String?, subid: String, append: Boolean, locked: Boolean = false): Int {
         if (server == null) {
             return 0
         }
@@ -370,6 +453,7 @@ object AngConfigManager {
                         ParsedProfile(
                             profile = config,
                             rawConfig = JsonUtil.toJsonPretty(srv) ?: "",
+                            locked = locked,
                         )
                     }
                     commitProfiles(configs, subid, append)
@@ -387,7 +471,7 @@ object AngConfigManager {
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(
-                    configs = listOf(ParsedProfile(config, server)),
+                    configs = listOf(ParsedProfile(config, server, locked)),
                     subid = subid,
                     append = append,
                 )
@@ -404,7 +488,7 @@ object AngConfigManager {
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(
-                    configs = listOf(ParsedProfile(config, server)),
+                    configs = listOf(ParsedProfile(config, server, locked)),
                     subid = subid,
                     append = append,
                 )

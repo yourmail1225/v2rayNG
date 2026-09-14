@@ -566,4 +566,26 @@
     <string name="openvpn_notification_authenticating">Đang xác thực</string>
     <string name="openvpn_notification_configuring">Đang cấu hình đường hầm</string>
 
+<string name="title_group_lock">Khóa nhóm</string>
+    <string name="title_export_locked">Xuất cấu hình đã khóa</string>
+    <string name="lock_profile">Khóa máy chủ</string>
+    <string name="unlock_profile">Mở khóa máy chủ</string>
+    <string name="acc_profile_locked">Đã khóa</string>
+    <string name="toast_profile_locked">Đã khóa máy chủ</string>
+    <string name="toast_profile_unlocked">Đã mở khóa máy chủ</string>
+    <string name="toast_no_locked_configs">Không có cấu hình đã khóa trong lựa chọn hiện tại</string>
+    <string name="lock_group_enable">Khóa nhóm này</string>
+    <string name="lock_group_expiry_label">Ngày hết hạn</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_data_limit_label">Giới hạn dữ liệu (MB)</string>
+    <string name="lock_group_data_limit_placeholder">Để trống nếu không giới hạn</string>
+    <string name="lock_group_require_condition">Bật ngày hết hạn hoặc giới hạn dữ liệu, hoặc tắt khóa</string>
+    <string name="lock_group_used_of_limit">Đã dùng %1$s trong %2$s MB</string>
+    <string name="lock_group_expired">Kết nối bị chặn: khóa của nhóm này đã hết hạn</string>
+    <string name="lock_group_data_exceeded">Kết nối bị chặn: nhóm này đã đạt giới hạn dữ liệu</string>
+    <string name="action_save">Lưu</string>
+    <string name="action_reset">Đặt lại mức sử dụng</string>
+    <string name="toast_save_success">Đã lưu</string>
+    <string name="toast_reset_success">Đã đặt lại mức sử dụng</string>
+
 </resources>
