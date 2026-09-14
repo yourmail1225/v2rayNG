@@ -89,7 +89,8 @@ class OpenVpnTunConfigTest {
         assertTrue(config.startsWith("# v2rayNG managed OpenVPN 2.x config\n"))
         // Provider management options are removed to avoid a second listener.
         assertFalse(config.contains("127.0.0.1 5555"))
-        assertFalse(config.contains("machine-readable-output"))
+        // The engine prepends this option itself, so the raw duplicate must collapse to one.
+        assertEquals(1, config.lineSequence().count { it == "machine-readable-output" })
         // A file-backed auth-user-pass is downgraded to the interactive prompt.
         assertTrue(config.contains("auth-user-pass\n"))
         assertFalse(config.contains("/tmp/creds"))
@@ -115,8 +116,8 @@ class OpenVpnTunConfigTest {
 
     @Test
     fun mapRawLinesNormalizesNamedTunDevice() {
-        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun0\nclient\n"))
-        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun1\nclient\n"))
+        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun0\nclient\n"))
+        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun1\nclient\n"))
         // The canonical form and non-tun devices stay untouched.
         assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun\n"))
         assertEquals("dev tap", OpenVpnEngine.mapRawLines("dev tap\n"))
