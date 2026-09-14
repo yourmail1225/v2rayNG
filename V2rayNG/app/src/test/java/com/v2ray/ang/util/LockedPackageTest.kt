@@ -82,7 +82,7 @@ class LockedPackageTest {
 
     @Test
     fun markerCaseOrWhitespaceIsNotMatched() {
-        val text = "${LockedPackage.HEADER.lowercase()}\n[""a""]\n${LockedPackage.FOOTER.lowercase()}"
+        val text = "${LockedPackage.HEADER.lowercase()}\n[\"a\"]\n${LockedPackage.FOOTER.lowercase()}"
         val parsed = LockedPackage.parse(text)
 
         assertEquals(0, parsed.entries.size)

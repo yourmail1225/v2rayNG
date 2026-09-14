@@ -63,7 +63,7 @@ class LockEvaluatorTest {
     @Test
     fun dateHelpersRoundTripViaUtc() {
         val epochDay = LockEvaluator.parseEpochDay("2025-06-01", utc)
-        assertEquals(1L, LockEvaluator.todayEpochDay(utc, nowMillis = epochDay * 86_400_000L))
+        assertEquals(epochDay, LockEvaluator.todayEpochDay(utc, nowMillis = epochDay * 86_400_000L))
         assertEquals("2025-06-01", LockEvaluator.formatEpochDay(epochDay, utc))
     }
 
