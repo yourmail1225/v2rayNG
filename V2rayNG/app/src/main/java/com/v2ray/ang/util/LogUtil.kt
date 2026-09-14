@@ -65,6 +65,18 @@ object LogUtil {
         }
     }
 
+    /**
+     * Tunnel/operational log written directly to logcat, bypassing the user-configurable
+     * log level so the OpenVPN engine lines always reach the log screen filter.
+     */
+    fun vpn(tag: String, message: String) {
+        Log.println(Log.INFO, tag, message)
+    }
+
+    fun vpn(tag: String, message: String, throwable: Throwable) {
+        Log.i(tag, message, throwable)
+    }
+
     fun d(tag: String = AppConfig.TAG, message: String) = log(Log.DEBUG, tag, message)
     fun i(tag: String = AppConfig.TAG, message: String) = log(Log.INFO, tag, message)
     fun w(tag: String = AppConfig.TAG, message: String) = log(Log.WARN, tag, message)

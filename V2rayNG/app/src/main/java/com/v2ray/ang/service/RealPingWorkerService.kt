@@ -108,6 +108,13 @@ class RealPingWorkerService(
         val retFailure = -1L
 
         val config = MmkvManager.decodeServerConfig(guid) ?: return retFailure
+        if (config.configType == EConfigType.OPENVPN) {
+            // No Xray outbound exists to probe, so measure the TCP handshake to the
+            // OpenVPN endpoint carried in the profile's raw .ovpn configuration.
+            val raw = MmkvManager.decodeServerRaw(guid) ?: return retFailure
+            val remote = OpenVpnEngine.parseOpenVpnRemote(raw) ?: return retFailure
+            return SpeedtestManager.socketConnectTime(remote.first, remote.second, 1000)
+        }
         if (!config.configType.isComplexType()
             && config.configType != EConfigType.HYSTERIA2
             && config.configType != EConfigType.WIREGUARD
@@ -136,6 +143,11 @@ class RealPingWorkerService(
         val retFailure = -1L
 
         val config = MmkvManager.decodeServerConfig(guid) ?: return retFailure
+        if (config.configType == EConfigType.OPENVPN) {
+            val raw = MmkvManager.decodeServerRaw(guid) ?: return retFailure
+            val remote = OpenVpnEngine.parseOpenVpnRemote(raw) ?: return retFailure
+            return SpeedtestManager.socketConnectTime(remote.first, remote.second, 1000)
+        }
         if (!config.configType.isComplexType()
             && config.configType != EConfigType.HYSTERIA2
             && config.configType != EConfigType.WIREGUARD

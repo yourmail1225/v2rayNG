@@ -76,7 +76,11 @@ class OpenVpnEngine(
         try {
             if (proc?.isAlive == true) {
                 proc.destroy()
-                proc.waitFor(3000, TimeUnit.MILLISECONDS)
+                if (!proc.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    LogUtil.vpn(TAG, "OpenVPN process ignored SIGTERM, force killing")
+                    proc.destroyForcibly()
+                    proc.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
+                }
             }
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -84,7 +88,7 @@ class OpenVpnEngine(
             LogUtil.w(TAG, "Error while stopping OpenVPN process: ${e.message}")
         }
         try {
-            readerThread?.join(3000)
+            readerThread?.join(timeoutMs)
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         }
@@ -106,7 +110,7 @@ class OpenVpnEngine(
             }
         } catch (e: IOException) {
             if (process == null) {
-                LogUtil.i(TAG, "OpenVPN process output closed")
+                LogUtil.vpn(TAG, "OpenVPN process output closed")
             } else {
                 LogUtil.w(TAG, "Error reading OpenVPN output: ${e.message}")
             }
@@ -140,6 +144,27 @@ class OpenVpnEngine(
     companion object {
         const val TAG = "OpenVpnEngine"
         const val SIGTERM = "signal SIGTERM"
+        private const val timeoutMs = 1500L
+
+        /**
+         * Resolves the first active `remote <host> [port]` line for TCP-latency tests.
+         * Returns null when no remote exists so callers can report "no delay".
+         */
+        fun parseOpenVpnRemote(config: String): Pair<String, Int>? {
+            return config.lineSequence()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") && !it.startsWith(";") }
+                .firstNotNullOfOrNull { line ->
+                    val parts = line.split(Regex("\\s+"))
+                    if (parts.firstOrNull() != "remote" || parts.size < 2) {
+                        null
+                    } else {
+                        parts[1].takeIf { it.isNotEmpty() && !it.startsWith("/") }?.let { host ->
+                            host to (parts.getOrNull(2)?.toIntOrNull() ?: 1194)
+                        }
+                    }
+                }
+        }
 
         fun buildEnhancedConfig(raw: String, socketPath: String): String {
             val builder = StringBuilder()

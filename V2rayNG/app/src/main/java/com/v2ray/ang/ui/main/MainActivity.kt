@@ -110,6 +110,7 @@ class MainActivity : HelperBaseComponentActivity() {
                     MainAction.ImportQRcode -> importQRcode()
                     MainAction.ImportClipboard -> importClipboard()
                     MainAction.ImportConfigLocal -> importConfigLocal()
+                    MainAction.ImportOpenVpnFile -> importOpenVpnFile()
                     is MainAction.ImportManually -> importManually(action.type)
                     MainAction.RestartService -> LauncherManager.restartServiceOrStart(this, ::requestServiceStart)
                     MainAction.LocateSelectedServer -> mainViewModel.triggerLocateSelectedServer()
@@ -243,6 +244,19 @@ class MainActivity : HelperBaseComponentActivity() {
                 }
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.TAG, "Failed to read content from URI", e)
+            }
+        }
+    }
+
+    private fun importOpenVpnFile() {
+        launchFileChooser { uri ->
+            if (uri == null) return@launchFileChooser
+            try {
+                contentResolver.openInputStream(uri)?.bufferedReader()?.use { reader ->
+                    mainViewModel.onAction(MainAction.ImportBatchConfig(reader.readText()))
+                }
+            } catch (e: Exception) {
+                LogUtil.e(AppConfig.TAG, "Failed to read OpenVPN config from URI", e)
             }
         }
     }

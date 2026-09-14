@@ -32,6 +32,7 @@
     <string name="menu_item_import_config_qrcode">و من ٱووردن کانفیگ ز کود QR</string>
     <string name="menu_item_import_config_clipboard">و من ٱووردن کانفیگ ز کلیپ بورد</string>
     <string name="menu_item_import_config_local">و من ٱووردن کانفیگ ز محلی</string>
+    <string name="menu_item_import_config_file_openvpn">و من ٱووردن کانفیگ OpenVPN ز فایل</string>
     <string name="menu_item_import_config_policy_group">ٱووردن [بونکۊ سیاست]</string>
     <string name="menu_item_import_config_proxy_chain">ٱووردن [زنجیره پروکسی]</string>
     <string name="menu_item_import_config_manually_vmess">ٱووردن [VMess]</string>

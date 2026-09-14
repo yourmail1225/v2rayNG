@@ -32,6 +32,7 @@
     <string name="menu_item_import_config_qrcode">Импорт из QR-кода</string>
     <string name="menu_item_import_config_clipboard">Импорт из буфера обмена</string>
     <string name="menu_item_import_config_local">Импорт из файла</string>
+    <string name="menu_item_import_config_file_openvpn">Импорт конфигурации OpenVPN из файла</string>
     <string name="menu_item_import_config_policy_group">Добавить политику группы</string>
     <string name="menu_item_import_config_proxy_chain">Добавить цепочку прокси</string>
     <string name="menu_item_import_config_manually_vmess">Добавить VMess</string>

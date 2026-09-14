@@ -32,6 +32,7 @@
     <string name="menu_item_import_config_qrcode">Import from QR code</string>
     <string name="menu_item_import_config_clipboard">Import from Clipboard</string>
     <string name="menu_item_import_config_local">Import from a local file</string>
+    <string name="menu_item_import_config_file_openvpn">Import OpenVPN config from a file</string>
     <string name="menu_item_import_config_policy_group">Add [Policy group]</string>
     <string name="menu_item_import_config_proxy_chain">Add [Proxy chain]</string>
     <string name="menu_item_import_config_manually_vmess">Add [VMess]</string>

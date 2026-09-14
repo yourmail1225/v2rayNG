@@ -59,7 +59,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     private val stopReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.getIntExtra("key", 0) == AppConfig.MSG_STATE_STOP) {
-                LogUtil.i(TAG, "Received MSG_STATE_STOP, stopping OpenVPN")
+                LogUtil.vpn(TAG, "Received MSG_STATE_STOP, stopping OpenVPN")
                 stopVpn()
             }
         }
@@ -104,7 +104,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     private fun startVpn(rawConfig: String): Boolean {
         synchronized(lock) {
             if (isRunning) {
-                LogUtil.i(TAG, "OpenVPN already running, ignoring duplicate start command")
+                LogUtil.vpn(TAG, "OpenVPN already running, ignoring duplicate start command")
                 return false
             }
             savedConfig = rawConfig
@@ -112,6 +112,10 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
             lastTunCfg = OpenVpnTunConfig()
 
             val socketPath = File(cacheDir, "mgmtsocket").absolutePath
+            // A listener from a previous run may have left the AF_UNIX file behind;
+            // the kernel removes it when that socket closes, so the stale file only
+            // exists after a hard kill and must not prevent a fresh bind/reconnect.
+            runCatching { File(socketPath).delete() }
             val mgmt = OpenVpnManagementThread(this, socketPath)
             // The bind must be ready before the openvpn process dials back.
             if (!mgmt.openManagementInterface()) {
@@ -154,7 +158,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
         if (!isRunning) {
             return
         }
-        LogUtil.i(TAG, "OpenVPN process exited")
+        LogUtil.vpn(TAG, "OpenVPN process exited")
         mainHandler.post {
             if (isRunning) {
                 stopVpn()
@@ -170,7 +174,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
         if (line.startsWith("MANAGEMENT: ")) {
             return
         }
-        LogUtil.i("OpenVPN", line)
+        LogUtil.vpn("OpenVPN", line)
     }
 
     /** Flips the UI toggle to "connected" exactly once per connection. */
@@ -196,37 +200,60 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     }
 
     private fun stopVpn() {
+        val mgmt: OpenVpnManagementThread?
+        val eng: OpenVpnEngine?
+        val mgmtHandle: Thread?
+        val notifyStop: Boolean
         synchronized(lock) {
-            val wasRunning = isRunning
-            val mgmt = managementThread
-            val mgmtHandle = managementThreadHandle
-            val eng = engine
+            mgmt = managementThread
+            eng = engine
+            mgmtHandle = managementThreadHandle
+            notifyStop = isRunning
             managementThread = null
             managementThreadHandle = null
             engine = null
             isRunning = false
+            // Release the VPN interface before the process teardown so Android drops
+            // the tun routes/traffic immediately instead of waiting for the engine exit.
+            try {
+                vpnInterface?.close()
+            } catch (e: Exception) {
+                LogUtil.vpn(TAG, "Error closing VPN interface", e)
+            }
+            vpnInterface = null
+            tunConfig = OpenVpnTunConfig()
+        }
+        NotificationHelper.stopForeground(this)
+        if (notifyStop && !stopSuccessNotified) {
+            stopSuccessNotified = true
+            MessageHelper.sendMsg2UI(this, AppConfig.MSG_STATE_STOP_SUCCESS, "")
+        }
+        if (mgmt == null && eng == null) {
+            stopSelf()
+            return
+        }
+        // Teardown owns process waiting and socket shutdown; it must not block the
+        // main thread (a stuck engine would otherwise ANR the whole service) and the
+        // service must stay alive until it finished, hence a dedicated thread.
+        LogUtil.vpn(TAG, "OpenVPN tearing down engine")
+        Thread({ tearDownEngine(mgmt, eng, mgmtHandle) }, "OpenVPN-Stop").start()
+    }
 
+    private fun tearDownEngine(
+        mgmt: OpenVpnManagementThread?,
+        eng: OpenVpnEngine?,
+        mgmtHandle: Thread?
+    ) {
+        try {
             mgmt?.managmentCommand(OpenVpnEngine.SIGTERM)
             mgmt?.closeManagementInterface()
             eng?.stop()
             try {
-                mgmtHandle?.join(3000)
+                mgmtHandle?.join(1500)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
             }
-
-            try {
-                vpnInterface?.close()
-            } catch (e: Exception) {
-                LogUtil.e(TAG, "Error closing VPN interface", e)
-            }
-            vpnInterface = null
-            tunConfig = OpenVpnTunConfig()
-            NotificationHelper.stopForeground(this)
-            if (wasRunning && !stopSuccessNotified) {
-                stopSuccessNotified = true
-                MessageHelper.sendMsg2UI(this, AppConfig.MSG_STATE_STOP_SUCCESS, "")
-            }
+        } finally {
             stopSelf()
         }
     }
@@ -276,7 +303,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     }
 
     override fun addHttpProxy(host: String, port: Int) {
-        LogUtil.i(TAG, "OpenVPN provided HTTP proxy $host:$port")
+        LogUtil.vpn(TAG, "OpenVPN provided HTTP proxy $host:$port")
     }
 
     override fun addRoute(dest: String, mask: String, gateway: String, device: String?) {
@@ -448,7 +475,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
         if (!isRunning) {
             return
         }
-        LogUtil.i(TAG, "OpenVPN state: $state $detail")
+        LogUtil.vpn(TAG, "OpenVPN state: $state $detail")
         if (state == "CONNECTED") {
             notifyStartSuccess()
         }
@@ -482,12 +509,7 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
     }
 
     override fun reportLog(level: String, msg: String) {
-        when (level) {
-            "E", "F" -> LogUtil.e(TAG, msg)
-            "W" -> LogUtil.w(TAG, msg)
-            "D" -> LogUtil.i(TAG, msg)
-            else -> LogUtil.i(TAG, msg)
-        }
+        LogUtil.vpn(TAG, "[$level] $msg")
     }
 
     override fun credentialsFor(needed: String): Pair<String, String>? {

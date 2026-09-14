@@ -32,6 +32,7 @@
     <string name="menu_item_import_config_qrcode">استيراد التكوين من رمز QR</string>
     <string name="menu_item_import_config_clipboard">استيراد التكوين من الحافظة</string>
     <string name="menu_item_import_config_local">استيراد التكوين من الجهاز</string>
+    <string name="menu_item_import_config_file_openvpn">استيراد إعداد OpenVPN من ملف</string>
     <string name="menu_item_import_config_policy_group">إضافة [مجموعة سياسات]</string>
     <string name="menu_item_import_config_proxy_chain">إضافة [سلسلة وكلاء]</string>
     <string name="menu_item_import_config_manually_vmess">إضافة [VMess]</string>

@@ -13,10 +13,13 @@ import com.v2ray.ang.dto.TestServiceMessage
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServersCache
 import com.v2ray.ang.dto.entities.SubscriptionCache
+import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.delay
 import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.extension.matchesPattern
 import com.v2ray.ang.extension.moveItem
+import com.v2ray.ang.handler.SpeedtestManager
+import com.v2ray.ang.service.OpenVpnEngine
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.CancellationException
@@ -802,6 +805,29 @@ class MainViewModel(
         if (!uiState.value.isRunning) return
         val requestId = testRequests.beginCurrent()
         _uiState.update { it.copy(isTesting = true, status = MainStatus.Testing) }
+        val selected = uiState.value.selectedGuid
+        if (selected != null &&
+            dataSource.decodeServerConfig(selected)?.configType == EConfigType.OPENVPN
+        ) {
+            // OpenVPN keeps no Xray core running, so test the TCP handshake to the
+            // tunnel endpoint described by the selected profile's raw .ovpn configuration.
+            viewModelScope.launch(ioDispatcher) {
+                val raw = dataSource.decodeServerRaw(selected).orEmpty()
+                val remote = OpenVpnEngine.parseOpenVpnRemote(raw)
+                val time = if (remote != null) {
+                    SpeedtestManager.socketConnectTime(remote.first, remote.second, 1000)
+                } else {
+                    -1L
+                }
+                val result = ConnectionTestResult(delayMillis = time, ipAddress = remote?.first)
+                if (testRequests.completeCurrent(requestId)) {
+                    _uiState.update {
+                        it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(result))
+                    }
+                }
+            }
+            return
+        }
         dataSource.testCurrentServerRealPing(requestId)
     }
 

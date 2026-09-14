@@ -143,6 +143,26 @@ class OpenVpnTunConfigTest {
     }
 
     @Test
+    fun parseOpenVpnRemoteResolvesEndpointForTesting() {
+        assertEquals(
+            "vpn.example.com" to 443,
+            OpenVpnEngine.parseOpenVpnRemote("client\ndev tun\nremote vpn.example.com 443\n")
+        )
+        // A missing port defaults to OpenVPN's conventional 1194.
+        assertEquals(
+            "vpn.example.com" to 1194,
+            OpenVpnEngine.parseOpenVpnRemote("remote vpn.example.com\n")
+        )
+        // Commented-out remotes are ignored in favour of an active one.
+        assertEquals(
+            "active.example.com" to 1194,
+            OpenVpnEngine.parseOpenVpnRemote("#remote disabled.example.com 8080\nremote active.example.com\n")
+        )
+        assertNull(OpenVpnEngine.parseOpenVpnRemote(""))
+        assertNull(OpenVpnEngine.parseOpenVpnRemote("client\ndev tun\nremote-cert-tls server\n"))
+    }
+
+    @Test
     fun isOpenVpnConfigDetectsOvpnMarkers() {
         assertTrue("client\ndev tun\nremote host 443\n".isOpenVpnConfig())
         assertTrue("dev tun0\n".isOpenVpnConfig())

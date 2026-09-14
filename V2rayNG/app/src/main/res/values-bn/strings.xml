@@ -32,6 +32,7 @@
     <string name="menu_item_import_config_qrcode">QR কোড থেকে কনফিগারেশন আমদানি করুন</string>
     <string name="menu_item_import_config_clipboard">ক্লিপবোর্ড থেকে কনফিগারেশন আমদানি করুন</string>
     <string name="menu_item_import_config_local">ডিভাইস থেকে কনফিগ আমদানি করুন</string>
+    <string name="menu_item_import_config_file_openvpn">ফাইল থেকে OpenVPN কনফিগ আমদানি করুন</string>
     <string name="menu_item_import_config_policy_group">[নীতি গ্রুপ] যোগ করুন</string>
     <string name="menu_item_import_config_proxy_chain">[প্রক্সি চেইন] যোগ করুন</string>
     <string name="menu_item_import_config_manually_vmess">[VMess] যোগ করুন</string>
