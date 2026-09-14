@@ -67,9 +67,7 @@ internal fun serverMenuActions(
 ): List<ServerMenuAction> {
     val candidates = if (isLocked) {
         // A locked profile may only be unlocked or deleted; its edit and share actions are removed.
-        ServerMenuAction.entries.filter {
-            (it.isLockAction && it.requiresLockedProfile) || it == ServerMenuAction.Delete
-        }
+        listOf(ServerMenuAction.Unlock, ServerMenuAction.Delete)
     } else {
         ServerMenuAction.entries.filter { !it.isLockAction }
     }
