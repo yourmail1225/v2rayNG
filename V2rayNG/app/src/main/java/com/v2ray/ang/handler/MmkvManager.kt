@@ -738,7 +738,7 @@ object MmkvManager {
      */
     fun decodeGroupLock(subscriptionId: String): GroupLockConfig {
         val json = subStorage.decodeString(groupLockKey(subscriptionId))
-        return JsonUtil.fromJsonSafe(json, GroupLockConfig::class.java) ?: GroupLockConfig()
+        return json?.let { JsonUtil.fromJsonSafe(it, GroupLockConfig::class.java) } ?: GroupLockConfig()
     }
 
     /**

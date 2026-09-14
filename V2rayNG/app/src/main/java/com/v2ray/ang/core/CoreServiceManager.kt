@@ -341,7 +341,7 @@ object CoreServiceManager {
      */
     private fun scheduleGroupUsageAccumulation() {
         if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) == true) return
-        groupUsageScope.cancelChildren()
+        groupUsageScope.coroutineContext.cancelChildren()
         groupUsageScope.launch {
             while (true) {
                 delay(GROUP_USAGE_TICK_MS)
