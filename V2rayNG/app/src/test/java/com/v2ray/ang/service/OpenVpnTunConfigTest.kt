@@ -92,7 +92,7 @@ class OpenVpnTunConfigTest {
         // The engine prepends this option itself, so the raw duplicate must collapse to one.
         assertEquals(1, config.lineSequence().count { it == "machine-readable-output" })
         // A file-backed auth-user-pass is downgraded to the interactive prompt.
-        assertTrue(config.contains("auth-user-pass\n"))
+        assertEquals("auth-user-pass", config.lineSequence().last())
         assertFalse(config.contains("/tmp/creds"))
         assertTrue(config.contains("remote vpn.example.com 443"))
     }
@@ -116,13 +116,13 @@ class OpenVpnTunConfigTest {
 
     @Test
     fun mapRawLinesNormalizesNamedTunDevice() {
-        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun0\nclient\n"))
-        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun1\nclient\n"))
+        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun0\nclient"))
+        assertEquals("dev tun\nclient", OpenVpnEngine.mapRawLines("dev tun1\nclient"))
         // The canonical form and non-tun devices stay untouched.
-        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun\n"))
-        assertEquals("dev tap", OpenVpnEngine.mapRawLines("dev tap\n"))
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("dev tun"))
+        assertEquals("dev tap", OpenVpnEngine.mapRawLines("dev tap"))
         // Leading whitespace is normalized with the device name.
-        assertEquals("dev tun", OpenVpnEngine.mapRawLines("  dev tun3\n"))
+        assertEquals("dev tun", OpenVpnEngine.mapRawLines("  dev tun3"))
     }
 
     @Test
