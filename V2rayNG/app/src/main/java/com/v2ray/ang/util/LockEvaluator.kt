@@ -1,6 +1,7 @@
 package com.v2ray.ang.util
 
 import com.v2ray.ang.dto.entities.GroupLockConfig
+import java.text.ParsePosition
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -108,7 +109,10 @@ object LockEvaluator {
                 timeZone = zone
                 isLenient = false
             }
-            val date = sdf.parse(text) ?: return null
+            val pos = ParsePosition(0)
+            val date = sdf.parse(text, pos) ?: return null
+            // DateFormat.parse ignores trailing text; require the whole input.
+            if (pos.index != text.length) return null
             // Reject out-of-range fields like "25:00" that some JDKs silently normalize.
             if (sdf.format(date) != text) return null
             (date.time + zone.getOffset(date.time)) / MINUTE_MILLIS
@@ -123,7 +127,10 @@ object LockEvaluator {
                 timeZone = zone
                 isLenient = false
             }
-            val date = sdf.parse(text) ?: return null
+            val pos = ParsePosition(0)
+            val date = sdf.parse(text, pos) ?: return null
+            // DateFormat.parse ignores trailing text; require the whole input.
+            if (pos.index != text.length) return null
             val day = (date.time + zone.getOffset(date.time)) / DAY_MILLIS
             (day + 1) * DAY_MINUTES
         } catch (e: Exception) {
