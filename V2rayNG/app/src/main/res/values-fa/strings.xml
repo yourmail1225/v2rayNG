@@ -467,6 +467,9 @@
     <string name="share_method_qrcode">کد QR</string>
     <string name="share_method_clipboard">کپی لینک کانفیگ</string>
     <string name="share_method_full_content">کپی کانفیگ کامل</string>
+    <string name="share_method_locked_qrcode">کیوآر قفل‌شده</string>
+    <string name="share_method_locked_clipboard">لینک قفل‌شده</string>
+    <string name="share_method_locked_file">فایل قفل‌شده</string>
     <string name="action_edit">ویرایش</string>
     <string name="action_delete">حذف</string>
     <string name="action_close">بستن</string>
@@ -577,8 +580,8 @@
     <string name="toast_profile_unlocked">قفل سرور باز شد</string>
     <string name="toast_no_locked_configs">در بخش انتخاب‌شده پروفایل قفل‌شده‌ای وجود ندارد</string>
     <string name="lock_group_enable">قفل کردن این گروه</string>
-    <string name="lock_group_expiry_label">تاریخ انقضا</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">تاریخ و ساعت انقضا</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">محدودیت مصرف (MB)</string>
     <string name="lock_group_data_limit_placeholder">برای عدم محدودیت خالی بگذارید</string>
     <string name="lock_group_require_condition">تاریخ انقضا یا محدودیت مصرف را فعال کنید یا قفل را غیرفعال کنید</string>

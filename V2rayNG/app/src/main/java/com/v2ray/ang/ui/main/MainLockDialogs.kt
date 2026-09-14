@@ -45,17 +45,17 @@ fun LockDeniedNoticeDialog(
     )
 }
 
-/** Edits the expiry date and data-volume limit of a subscription-group lock. */
+/** Edits the expiry moment and data-volume limit of a subscription-group lock. */
 @Composable
 fun GroupLockEditorDialog(
     editor: GroupLockEditorUi,
     onDismiss: () -> Unit,
-    onSave: (enabled: Boolean, expiryEpochDay: Long, dataLimitBytes: Long) -> Unit,
+    onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
 ) {
     var enabled by rememberSaveable(editor.groupId) { mutableStateOf(editor.enabled) }
     var expiryText by rememberSaveable(editor.groupId) {
-        mutableStateOf(LockEvaluator.formatEpochDay(editor.expiryEpochDay))
+        mutableStateOf(LockEvaluator.formatEpochMinute(editor.expiryEpochMinute))
     }
     var limitMbText by rememberSaveable(editor.groupId) {
         mutableStateOf((editor.dataLimitBytes / MB).takeIf { it > 0L }?.toString().orEmpty())
@@ -114,7 +114,7 @@ fun GroupLockEditorDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val expiry = LockEvaluator.parseEpochDay(expiryText)
+                    val expiry = LockEvaluator.parseEpochMinute(expiryText)
                     val limitMb = limitMbText.toLongOrNull() ?: 0L
                     val limitBytes = if (limitMb > 0L) {
                         try {

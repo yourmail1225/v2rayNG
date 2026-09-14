@@ -366,12 +366,12 @@ private fun ServerListItem(
                         )
                     }
                 } else if (row.locked) {
-                    // A locked profile cannot be edited or shared; the lock button opens the
-                    // menu holding the Unlock and Delete actions, which also marks the row.
+                    // A locked profile opens the more menu (locked-artifact share, unlock,
+                    // delete); its generic share and edit actions are removed.
                     IconButton(onClick = { actions.more(row.guid, row.profile, true) }, Modifier.size(36.dp)) {
                         Icon(
                             painterResource(R.drawable.ic_lock_24dp),
-                            stringResource(R.string.unlock_profile),
+                            stringResource(R.string.acc_more),
                             Modifier.size(24.dp)
                         )
                     }

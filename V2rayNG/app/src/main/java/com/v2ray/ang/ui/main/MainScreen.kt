@@ -137,12 +137,12 @@ fun MainScreen(
         GroupLockEditorDialog(
             editor = editor,
             onDismiss = { onAction(MainAction.DismissGroupLockEditor) },
-            onSave = { enabled, expiryEpochDay, dataLimitBytes ->
+            onSave = { enabled, expiryEpochMinute, dataLimitBytes ->
                 onAction(
                     MainAction.SaveGroupLock(
                         groupId = editor.groupId,
                         enabled = enabled,
-                        expiryEpochDay = expiryEpochDay,
+                        expiryEpochMinute = expiryEpochMinute,
                         dataLimitBytes = dataLimitBytes,
                     )
                 )

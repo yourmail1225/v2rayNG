@@ -85,4 +85,70 @@ class LockEvaluatorTest {
         val day = LockEvaluator.todayEpochDay(utc, nowMillis = 86_400_000L)
         assertEquals(1L, day)
     }
+
+    @Test
+    fun todayEpochMinuteUsesUtcWhenAsked() {
+        // 2025-06-01 10:30 UTC in wall-clock minutes.
+        val minute = LockEvaluator.todayEpochMinute(utc, nowMillis = 29_146_230L * 60_000L)
+        assertEquals(29_146_230L, minute)
+    }
+
+    @Test
+    fun parseEpochMinuteRoundTripsDateTime() {
+        val minute = LockEvaluator.parseEpochMinute("2025-06-01 10:30", utc)
+        assertEquals(29_146_230L, minute)
+        assertEquals("2025-06-01 10:30", LockEvaluator.formatEpochMinute(minute, utc))
+    }
+
+    @Test
+    fun parseEpochMinuteDateOnlyBecomesEndOfDay() {
+        // A bare date keeps the legacy allow-whole-expiry-day semantics: expiry at
+        // the minute after 23:59 of that day.
+        val minute = LockEvaluator.parseEpochMinute("2025-06-01", utc)
+        assertEquals("2025-06-02 00:00", LockEvaluator.formatEpochMinute(minute, utc))
+    }
+
+    @Test
+    fun parseEpochMinuteBlankOrInvalidReturnsZero() {
+        assertEquals(0L, LockEvaluator.parseEpochMinute("", utc))
+        assertEquals(0L, LockEvaluator.parseEpochMinute("not-a-date", utc))
+        assertEquals(0L, LockEvaluator.parseEpochMinute("2025-06-01 25:00", utc))
+        assertEquals(0L, LockEvaluator.parseEpochMinute("2025/06/01 10:30", utc))
+    }
+
+    @Test
+    fun formatEpochMinuteZeroIsEmptyString() {
+        assertEquals("", LockEvaluator.formatEpochMinute(0, utc))
+    }
+
+    @Test
+    fun minuteExpiryDeniesOnOrAfterExpiryMinute() {
+        val lock = GroupLockConfig(enabled = true, expiryEpochMinute = 29_146_230L)
+        assertTrue(
+            LockEvaluator.evaluate(lock, nowEpochMinute = 29_146_229L) is LockEvaluator.Decision.Allow
+        )
+        val denied = LockEvaluator.evaluate(lock, nowEpochMinute = 29_146_230L)
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(LockEvaluator.DeniedReason.EXPIRED, (denied as LockEvaluator.Decision.Denied).reason)
+        assertTrue(
+            LockEvaluator.evaluate(lock, nowEpochMinute = 29_146_231L) is LockEvaluator.Decision.Denied
+        )
+    }
+
+    @Test
+    fun legacyDayExpiryStillAppliesWhenNoMinuteSet() {
+        val lock = GroupLockConfig(enabled = true, expiryEpochDay = 10)
+        assertTrue(
+            LockEvaluator.evaluate(lock, todayEpochDay = 11, nowEpochMinute = 500_000) is LockEvaluator.Decision.Denied
+        )
+    }
+
+    @Test
+    fun minuteExpiryTakesPrecedenceOverLegacyDay() {
+        val lock = GroupLockConfig(enabled = true, expiryEpochDay = 10, expiryEpochMinute = 29_146_230L)
+        // Minute unexpired even though the legacy day already elapsed.
+        assertTrue(
+            LockEvaluator.evaluate(lock, todayEpochDay = 11, nowEpochMinute = 29_146_229L) is LockEvaluator.Decision.Allow
+        )
+    }
 }

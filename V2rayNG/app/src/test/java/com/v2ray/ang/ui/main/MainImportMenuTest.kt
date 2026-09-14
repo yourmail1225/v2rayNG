@@ -20,7 +20,7 @@ class MainImportMenuTest {
 
     @Test
     fun regularMoreMenuContainsEveryNonLockActionInDisplayOrder() {
-        val expected = ServerMenuAction.entries.filter { !it.isLockAction }
+        val expected = ServerMenuAction.entries.filter { !it.isLockAction && !it.requiresLockedProfile }
         assertEquals(
             expected,
             serverMenuActions(isComplexProfile = false, includeManagementActions = true, isLocked = false),
@@ -49,8 +49,11 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedProfileMenuShowsUnlockAndDeleteOnly() {
+    fun lockedProfileMenuShowsLockedShareUnlockAndDeleteInOrder() {
         val expected = listOf(
+            ServerMenuAction.ShareLockedQRCode,
+            ServerMenuAction.ShareLockedClipboard,
+            ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
             ServerMenuAction.Delete,
         )
@@ -61,8 +64,11 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedComplexProfileMenuShowsUnlockAndDeleteOnly() {
+    fun lockedComplexProfileMenuShowsLockedShareUnlockAndDeleteInOrder() {
         val expected = listOf(
+            ServerMenuAction.ShareLockedQRCode,
+            ServerMenuAction.ShareLockedClipboard,
+            ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
             ServerMenuAction.Delete,
         )
@@ -73,11 +79,13 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedProfileShareDialogWouldShowNoShareActions() {
-        // The row UI never opens the share dialog for a locked profile with management
-        // actions hidden; assert the predicate stays consistent if it ever does.
+    fun lockedProfileShareDialogShowsOnlyLockedShareActions() {
         assertEquals(
-            emptyList<ServerMenuAction>(),
+            listOf(
+                ServerMenuAction.ShareLockedQRCode,
+                ServerMenuAction.ShareLockedClipboard,
+                ServerMenuAction.ShareLockedFile,
+            ),
             serverMenuActions(isComplexProfile = false, includeManagementActions = false, isLocked = true)
         )
     }

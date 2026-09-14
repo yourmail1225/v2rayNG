@@ -12,6 +12,8 @@ import java.util.TimeZone
  */
 object LockEvaluator {
     private const val DAY_MILLIS = 86_400_000L
+    private const val MINUTE_MILLIS = 60_000L
+    private const val DAY_MINUTES = 1_440L
 
     enum class DeniedReason {
         EXPIRED,
@@ -64,20 +66,91 @@ object LockEvaluator {
     }
 
     /**
+     * Maps a timestamp to the minute-of-epoch for its calendar date and time in [zone].
+     * Unlike epoch seconds, the value is expressed in local wall-clock minutes, so it
+     * round-trips through [formatEpochMinute] without any epoch-day timezone jitter.
+     */
+    fun todayEpochMinute(
+        zone: TimeZone = TimeZone.getDefault(),
+        nowMillis: Long = System.currentTimeMillis()
+    ): Long {
+        return (nowMillis + zone.getOffset(nowMillis)) / MINUTE_MILLIS
+    }
+
+    /**
+     * Parses `yyyy-MM-dd HH:mm` into a minute-of-epoch, or a bare `yyyy-MM-dd` into the
+     * minute at the end of that day (allowing the whole expiry day, matching the legacy
+     * date-only semantics). Returns 0 for blank or invalid text.
+     */
+    fun parseEpochMinute(text: String, zone: TimeZone = TimeZone.getDefault()): Long {
+        if (text.isBlank()) return 0L
+        val trimmed = text.trim()
+        parseDateTime(trimmed, zone)?.let { return it }
+        parseDateOnly(trimmed, zone)?.let { return it }
+        return 0L
+    }
+
+    /**
+     * Formats a minute-of-epoch as `yyyy-MM-dd HH:mm`, or an empty string for 0.
+     */
+    fun formatEpochMinute(epochMinute: Long, zone: TimeZone = TimeZone.getDefault()): String {
+        if (epochMinute == 0L) return ""
+        val millis = epochMinute * MINUTE_MILLIS - zone.getOffset(epochMinute * MINUTE_MILLIS)
+        return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).apply {
+            timeZone = zone
+            isLenient = false
+        }.format(Date(millis))
+    }
+
+    private fun parseDateTime(text: String, zone: TimeZone): Long? {
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).apply {
+                timeZone = zone
+                isLenient = false
+            }
+            val date = sdf.parse(text) ?: return null
+            (date.time + zone.getOffset(date.time)) / MINUTE_MILLIS
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseDateOnly(text: String, zone: TimeZone): Long? {
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                timeZone = zone
+                isLenient = false
+            }
+            val date = sdf.parse(text) ?: return null
+            val day = (date.time + zone.getOffset(date.time)) / DAY_MILLIS
+            (day + 1) * DAY_MINUTES
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Evaluates whether a group lock currently blocks a connection.
      *
      * @param lock The group lock configuration, or null when the group has no lock.
      * @param todayEpochDay The current date as an epoch day; injected so callers keep
-     *                      control of the clock.
+     *                      control of the clock. Only used by legacy date-only locks.
+     * @param nowEpochMinute The current wall-clock minute; used when a lock has
+     *                       minute-granularity expiry.
      * @param currentUsedBytes The data already consumed by the group.
      */
     fun evaluate(
         lock: GroupLockConfig?,
         todayEpochDay: Long = todayEpochDay(),
+        nowEpochMinute: Long = todayEpochMinute(),
         currentUsedBytes: Long = lock?.usedBytes ?: 0L
     ): Decision {
         if (lock == null || !lock.enabled) return Decision.Allow
-        if (lock.expiryEpochDay != 0L && todayEpochDay > lock.expiryEpochDay) {
+        if (lock.expiryEpochMinute != 0L) {
+            if (nowEpochMinute >= lock.expiryEpochMinute) {
+                return Decision.Denied(DeniedReason.EXPIRED)
+            }
+        } else if (lock.expiryEpochDay != 0L && todayEpochDay > lock.expiryEpochDay) {
             return Decision.Denied(DeniedReason.EXPIRED)
         }
         if (lock.dataLimitBytes != 0L && currentUsedBytes >= lock.dataLimitBytes) {

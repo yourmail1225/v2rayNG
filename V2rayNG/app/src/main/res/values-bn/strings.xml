@@ -467,6 +467,9 @@
     <string name="share_method_qrcode">QR কোড</string>
     <string name="share_method_clipboard">প্রোফাইল লিংক কপি করুন</string>
     <string name="share_method_full_content">পূর্ণ কনফিগারেশন কপি করুন</string>
+    <string name="share_method_locked_qrcode">লকড QR কোড</string>
+    <string name="share_method_locked_clipboard">লকড লিংক</string>
+    <string name="share_method_locked_file">লকড ফাইল</string>
     <string name="action_edit">সম্পাদনা</string>
     <string name="action_delete">মুছুন</string>
     <string name="action_close">বন্ধ করুন</string>
@@ -577,8 +580,8 @@
     <string name="toast_profile_unlocked">সার্ভারের লক খোলা হয়েছে</string>
     <string name="toast_no_locked_configs">বর্তমান নির্বাচনে কোনো লক করা প্রোফাইল নেই</string>
     <string name="lock_group_enable">এই গ্রুপটি লক করুন</string>
-    <string name="lock_group_expiry_label">মেয়াদ শেষ হওয়ার তারিখ</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">মেয়াদ শেষ হওয়ার তারিখ ও সময়</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">ডেটা সীমা (MB)</string>
     <string name="lock_group_data_limit_placeholder">সীমা ছাড়া ফাঁকা রাখুন</string>
     <string name="lock_group_require_condition">একটি মেয়াদ বা ডেটা সীমা সক্রিয় করুন, অথবা লকটি অক্ষম করুন</string>

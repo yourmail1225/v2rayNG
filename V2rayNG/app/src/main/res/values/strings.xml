@@ -467,6 +467,9 @@
     <string name="share_method_qrcode">QR code</string>
     <string name="share_method_clipboard">Copy profile link</string>
     <string name="share_method_full_content">Copy full configuration</string>
+    <string name="share_method_locked_qrcode">Locked QR code</string>
+    <string name="share_method_locked_clipboard">Locked link</string>
+    <string name="share_method_locked_file">Locked file</string>
     <string name="action_edit">Edit</string>
     <string name="action_delete">Delete</string>
     <string name="action_close">Close</string>
@@ -577,8 +580,8 @@
     <string name="toast_profile_unlocked">Profile unlocked</string>
     <string name="toast_no_locked_configs">No locked profiles in the current selection</string>
     <string name="lock_group_enable">Lock this group</string>
-    <string name="lock_group_expiry_label">Expiration date</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">Expiration date and time</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">Data limit (MB)</string>
     <string name="lock_group_data_limit_placeholder">Leave empty for no limit</string>
     <string name="lock_group_require_condition">Enable an expiration date or a data limit, or disable the lock</string>

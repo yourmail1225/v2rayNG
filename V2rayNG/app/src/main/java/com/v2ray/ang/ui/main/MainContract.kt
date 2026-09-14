@@ -20,7 +20,7 @@ data class GroupLockEditorUi(
     val groupId: String,
     val groupName: String,
     val enabled: Boolean = false,
-    val expiryEpochDay: Long = 0L,
+    val expiryEpochMinute: Long = 0L,
     val dataLimitBytes: Long = 0L,
     val usedBytes: Long = 0L,
 )
@@ -77,6 +77,9 @@ sealed interface MainAction {
     data class ShareQRCode(val guid: String) : MainAction
     data class ShareClipboard(val guid: String) : MainAction
     data class ShareFullContent(val guid: String) : MainAction
+    data class ShareLockedQRCode(val guid: String) : MainAction
+    data class ShareLockedClipboard(val guid: String) : MainAction
+    data class ShareLockedFile(val guid: String) : MainAction
     data object DismissQRCodeDialog : MainAction
 
     data class ImportBatchConfig(val configText: String) : MainAction
@@ -87,7 +90,7 @@ sealed interface MainAction {
     data class SaveGroupLock(
         val groupId: String,
         val enabled: Boolean,
-        val expiryEpochDay: Long,
+        val expiryEpochMinute: Long,
         val dataLimitBytes: Long,
     ) : MainAction
     data class ResetGroupData(val groupId: String) : MainAction

@@ -475,6 +475,9 @@
     <string name="share_method_qrcode">رمز QR</string>
     <string name="share_method_clipboard">نسخ رابط التكوين</string>
     <string name="share_method_full_content">نسخ التكوين الكامل</string>
+    <string name="share_method_locked_qrcode">رمز QR مقفل</string>
+    <string name="share_method_locked_clipboard">الرابط المقفل</string>
+    <string name="share_method_locked_file">الملف المقفل</string>
     <string name="action_edit">تعديل</string>
     <string name="action_delete">حذف</string>
     <string name="action_close">إغلاق</string>
@@ -585,8 +588,8 @@
     <string name="toast_profile_unlocked">تم إلغاء قفل الخادم</string>
     <string name="toast_no_locked_configs">لا توجد ملفات مقفلة في التحديد الحالي</string>
     <string name="lock_group_enable">قفل هذه المجموعة</string>
-    <string name="lock_group_expiry_label">تاريخ الانتهاء</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">تاريخ الانتهاء (التاريخ والوقت)</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">حد البيانات (MB)</string>
     <string name="lock_group_data_limit_placeholder">اتركه فارغًا لعدم وجود حد</string>
     <string name="lock_group_require_condition">فعّل تاريخ انتهاء أو حد بيانات، أو عطّل القفل</string>

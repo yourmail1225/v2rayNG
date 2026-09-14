@@ -465,6 +465,9 @@
     <string name="share_method_qrcode">QR Code</string>
     <string name="share_method_clipboard">複製設定連結</string>
     <string name="share_method_full_content">複製完整設定</string>
+    <string name="share_method_locked_qrcode">鎖定 QR Code</string>
+    <string name="share_method_locked_clipboard">鎖定連結</string>
+    <string name="share_method_locked_file">鎖定檔案</string>
     <string name="action_edit">編輯</string>
     <string name="action_delete">刪除</string>
     <string name="action_close">關閉</string>
@@ -575,8 +578,8 @@
     <string name="toast_profile_unlocked">伺服器已解除鎖定</string>
     <string name="toast_no_locked_configs">目前選取項目中沒有已鎖定設定</string>
     <string name="lock_group_enable">鎖定此群組</string>
-    <string name="lock_group_expiry_label">到期日期</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">到期時間</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">資料上限（MB）</string>
     <string name="lock_group_data_limit_placeholder">留空則不限制</string>
     <string name="lock_group_require_condition">請啟用到期日期或資料上限，或停用鎖定</string>

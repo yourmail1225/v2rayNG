@@ -471,6 +471,9 @@
     <string name="share_method_qrcode">QR-код</string>
     <string name="share_method_clipboard">Копировать ссылку профиля</string>
     <string name="share_method_full_content">Копировать полную конфигурацию</string>
+    <string name="share_method_locked_qrcode">Заблокированный QR-код</string>
+    <string name="share_method_locked_clipboard">Заблокированная ссылка</string>
+    <string name="share_method_locked_file">Заблокированный файл</string>
     <string name="action_edit">Изменить</string>
     <string name="action_delete">Удалить</string>
     <string name="action_close">Закрыть</string>
@@ -581,8 +584,8 @@
     <string name="toast_profile_unlocked">Блокировка сервера снята</string>
     <string name="toast_no_locked_configs">В текущей выборке нет заблокированных профилей</string>
     <string name="lock_group_enable">Заблокировать эту группу</string>
-    <string name="lock_group_expiry_label">Срок действия</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">Срок действия (дата и время)</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">Лимит данных (МБ)</string>
     <string name="lock_group_data_limit_placeholder">Оставьте пустым для безлимита</string>
     <string name="lock_group_require_condition">Укажите срок действия или лимит данных, либо отключите блокировку</string>

@@ -54,6 +54,9 @@ internal enum class ServerMenuAction(
     ShareQRCode(R.string.share_method_qrcode, isShareAction = true, supportsComplexProfiles = false),
     ShareClipboard(R.string.share_method_clipboard, isShareAction = true, supportsComplexProfiles = false),
     ShareFullContent(R.string.share_method_full_content, isShareAction = true, supportsComplexProfiles = true),
+    ShareLockedQRCode(R.string.share_method_locked_qrcode, isShareAction = true, supportsComplexProfiles = true, requiresLockedProfile = true),
+    ShareLockedClipboard(R.string.share_method_locked_clipboard, isShareAction = true, supportsComplexProfiles = true, requiresLockedProfile = true),
+    ShareLockedFile(R.string.share_method_locked_file, isShareAction = true, supportsComplexProfiles = true, requiresLockedProfile = true),
     Edit(R.string.action_edit, isShareAction = false, supportsComplexProfiles = true),
     Delete(R.string.action_delete, isShareAction = false, supportsComplexProfiles = true),
     Lock(R.string.lock_profile, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = false),
@@ -66,10 +69,17 @@ internal fun serverMenuActions(
     isLocked: Boolean,
 ): List<ServerMenuAction> {
     val candidates = if (isLocked) {
-        // A locked profile may only be unlocked or deleted; its edit and share actions are removed.
-        listOf(ServerMenuAction.Unlock, ServerMenuAction.Delete)
+        // A locked profile can only be shared as a locked artifact, unlocked, or
+        // deleted; its generic share and edit actions are removed.
+        listOf(
+            ServerMenuAction.ShareLockedQRCode,
+            ServerMenuAction.ShareLockedClipboard,
+            ServerMenuAction.ShareLockedFile,
+            ServerMenuAction.Unlock,
+            ServerMenuAction.Delete
+        )
     } else {
-        ServerMenuAction.entries.filter { !it.isLockAction }
+        ServerMenuAction.entries.filter { !it.isLockAction && !it.requiresLockedProfile }
     }
     return candidates.filter { action ->
         (!isComplexProfile || action.supportsComplexProfiles) &&
@@ -124,6 +134,9 @@ fun ShareMethodDialog(
                 ServerMenuAction.ShareQRCode -> onAction(MainAction.ShareQRCode(guid))
                 ServerMenuAction.ShareClipboard -> onAction(MainAction.ShareClipboard(guid))
                 ServerMenuAction.ShareFullContent -> onAction(MainAction.ShareFullContent(guid))
+                ServerMenuAction.ShareLockedQRCode -> onAction(MainAction.ShareLockedQRCode(guid))
+                ServerMenuAction.ShareLockedClipboard -> onAction(MainAction.ShareLockedClipboard(guid))
+                ServerMenuAction.ShareLockedFile -> onAction(MainAction.ShareLockedFile(guid))
                 ServerMenuAction.Edit -> onAction(MainAction.EditServer(guid, profile))
                 ServerMenuAction.Delete -> onRemove(guid)
                 ServerMenuAction.Lock,

@@ -28,6 +28,7 @@ import com.v2ray.ang.util.LockedPackage
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.QRCodeDecoder
 import com.v2ray.ang.util.Utils
+import java.io.File
 import java.net.URI
 
 object AngConfigManager {
@@ -306,6 +307,77 @@ object AngConfigManager {
             LockedPackage.LockedEntry(content)
         }
         return LockedPackage.encode(entries)
+    }
+
+    /**
+     * Returns the locked-package text for a single locked profile, or an empty string
+     * when the profile is unlocked, missing, or has no shareable content. The payload
+     * stays exportable-but-locked: importing it re-imports the profile locked.
+     */
+    fun shareLockedConfig(guid: String): String {
+        if (!MmkvManager.isProfileLocked(guid)) return ""
+        val content = shareConfigContent(guid)
+        if (content.isBlank()) return ""
+        return LockedPackage.encode(listOf(LockedPackage.LockedEntry(content)))
+    }
+
+    /**
+     * Copies the locked-package text of a single locked profile to the clipboard.
+     *
+     * @param context The context.
+     * @param guid The GUID of the configuration.
+     * @return The result code; 0 on success.
+     */
+    fun shareLocked2Clipboard(context: Context, guid: String): Int {
+        try {
+            val conf = shareLockedConfig(guid)
+            if (TextUtils.isEmpty(conf)) return -1
+
+            Utils.setClipboard(context, conf)
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to share locked config to clipboard", e)
+            return -1
+        }
+        return 0
+    }
+
+    /**
+     * Creates a QR code bitmap from the locked-package text of a locked profile.
+     *
+     * @param guid The GUID of the configuration.
+     * @return The QR code bitmap, or null when the profile cannot be shared as locked.
+     */
+    fun shareLocked2QRCode(guid: String): Bitmap? {
+        try {
+            val conf = shareLockedConfig(guid)
+            if (TextUtils.isEmpty(conf)) return null
+            return QRCodeDecoder.createQRCode(conf)
+
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to share locked config as QR code", e)
+            return null
+        }
+    }
+
+    /**
+     * Writes the locked-package text of a locked profile to a cache file for sharing.
+     * Callers must run this off the main thread.
+     *
+     * @param context The context; the file is written under its cache directory.
+     * @param guid The GUID of the configuration.
+     * @return The created file, or null when the profile cannot be shared as locked.
+     */
+    fun writeLockedPackageFile(context: Context, guid: String): File? {
+        return try {
+            val conf = shareLockedConfig(guid)
+            if (TextUtils.isEmpty(conf)) return null
+            val file = File(context.cacheDir, "locked-config-$guid.txt")
+            file.writeText(conf)
+            file
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to write locked config file", e)
+            null
+        }
     }
     /**
      * Parses a batch of subscriptions.

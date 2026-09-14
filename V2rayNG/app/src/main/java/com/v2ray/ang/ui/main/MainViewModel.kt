@@ -246,6 +246,11 @@ class MainViewModel(
                 _uiState.update { it.copy(shareQRCodeBitmap = bitmap) }
             }
 
+            is MainAction.ShareLockedQRCode -> {
+                val bitmap = dataSource.shareLocked2QRCode(action.guid)
+                _uiState.update { it.copy(shareQRCodeBitmap = bitmap) }
+            }
+
             MainAction.DismissQRCodeDialog -> {
                 _uiState.update { it.copy(shareQRCodeBitmap = null) }
             }
@@ -261,7 +266,9 @@ class MainViewModel(
             MainAction.LocateSelectedServer,
             is MainAction.EditServer,
             is MainAction.ShareClipboard,
-            is MainAction.ShareFullContent -> {
+            is MainAction.ShareFullContent,
+            is MainAction.ShareLockedClipboard,
+            is MainAction.ShareLockedFile -> {
                 // Handled by Activity via its onAction lambda
             }
         }
@@ -621,7 +628,7 @@ class MainViewModel(
                     groupId = groupId,
                     groupName = groupName,
                     enabled = lock.enabled,
-                    expiryEpochDay = lock.expiryEpochDay,
+                    expiryEpochMinute = lock.expiryEpochMinute,
                     dataLimitBytes = lock.dataLimitBytes,
                     usedBytes = lock.usedBytes,
                 )
@@ -630,7 +637,7 @@ class MainViewModel(
     }
 
     private fun saveGroupLock(action: MainAction.SaveGroupLock) {
-        if (action.enabled && action.expiryEpochDay == 0L && action.dataLimitBytes == 0L) {
+        if (action.enabled && action.expiryEpochMinute == 0L && action.dataLimitBytes == 0L) {
             toastError(R.string.lock_group_require_condition)
             return
         }
@@ -643,7 +650,7 @@ class MainViewModel(
             action.groupId,
             GroupLockConfig(
                 enabled = action.enabled,
-                expiryEpochDay = action.expiryEpochDay,
+                expiryEpochMinute = action.expiryEpochMinute,
                 dataLimitBytes = action.dataLimitBytes,
                 usedBytes = usedBytes,
             )

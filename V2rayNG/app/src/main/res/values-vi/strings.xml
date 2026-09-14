@@ -465,6 +465,9 @@
     <string name="share_method_qrcode">Mã QR</string>
     <string name="share_method_clipboard">Sao chép liên kết cấu hình</string>
     <string name="share_method_full_content">Sao chép toàn bộ cấu hình</string>
+    <string name="share_method_locked_qrcode">Mã QR đã khóa</string>
+    <string name="share_method_locked_clipboard">Liên kết đã khóa</string>
+    <string name="share_method_locked_file">Tệp đã khóa</string>
     <string name="action_edit">Chỉnh sửa</string>
     <string name="action_delete">Xoá</string>
     <string name="action_close">Đóng</string>
@@ -575,8 +578,8 @@
     <string name="toast_profile_unlocked">Đã mở khóa máy chủ</string>
     <string name="toast_no_locked_configs">Không có cấu hình đã khóa trong lựa chọn hiện tại</string>
     <string name="lock_group_enable">Khóa nhóm này</string>
-    <string name="lock_group_expiry_label">Ngày hết hạn</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">Ngày và giờ hết hạn</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">Giới hạn dữ liệu (MB)</string>
     <string name="lock_group_data_limit_placeholder">Để trống nếu không giới hạn</string>
     <string name="lock_group_require_condition">Bật ngày hết hạn hoặc giới hạn dữ liệu, hoặc tắt khóa</string>

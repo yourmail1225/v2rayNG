@@ -465,6 +465,9 @@
     <string name="share_method_qrcode">二维码</string>
     <string name="share_method_clipboard">复制配置链接</string>
     <string name="share_method_full_content">复制完整配置</string>
+    <string name="share_method_locked_qrcode">锁定二维码</string>
+    <string name="share_method_locked_clipboard">锁定链接</string>
+    <string name="share_method_locked_file">锁定文件</string>
     <string name="action_edit">编辑</string>
     <string name="action_delete">删除</string>
     <string name="action_close">关闭</string>
@@ -575,8 +578,8 @@
     <string name="toast_profile_unlocked">服务器已解锁</string>
     <string name="toast_no_locked_configs">当前选择中没有已锁定的配置</string>
     <string name="lock_group_enable">锁定此群组</string>
-    <string name="lock_group_expiry_label">到期日期</string>
-    <string name="lock_group_expiry_placeholder">yyyy-MM-dd</string>
+    <string name="lock_group_expiry_label">到期时间</string>
+    <string name="lock_group_expiry_placeholder">yyyy-MM-dd HH:mm</string>
     <string name="lock_group_data_limit_label">数据限额（MB）</string>
     <string name="lock_group_data_limit_placeholder">留空表示不限制</string>
     <string name="lock_group_require_condition">请启用到期日期或数据限额，或关闭锁定</string>

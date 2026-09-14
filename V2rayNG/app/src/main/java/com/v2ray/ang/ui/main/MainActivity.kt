@@ -9,9 +9,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AngApplication
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.core.LauncherManager
 import com.v2ray.ang.dto.entities.ProfileItem
@@ -118,6 +120,8 @@ class MainActivity : HelperBaseComponentActivity() {
                     is MainAction.EditServer -> editServer(action.guid, action.profile)
                     is MainAction.ShareClipboard -> shareToClipboard(action.guid)
                     is MainAction.ShareFullContent -> shareFullContentAsync(action.guid)
+                    is MainAction.ShareLockedClipboard -> shareLockedToClipboard(action.guid)
+                    is MainAction.ShareLockedFile -> shareLockedFile(action.guid)
                     else -> mainViewModel.onAction(action)
                 }
             },
@@ -134,6 +138,44 @@ class MainActivity : HelperBaseComponentActivity() {
             withContext(Dispatchers.Main) {
                 if (result == 0) toastSuccess(R.string.toast_success)
                 else toastError(R.string.toast_failure)
+            }
+        }
+    }
+
+    private fun shareLockedToClipboard(guid: String) {
+        if (AngConfigManager.shareLocked2Clipboard(this, guid) == 0) {
+            toastSuccess(R.string.toast_success)
+        } else {
+            toastError(R.string.toast_failure)
+        }
+    }
+
+    private fun shareLockedFile(guid: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val file = AngConfigManager.writeLockedPackageFile(this@MainActivity, guid)
+            if (file == null) {
+                withContext(Dispatchers.Main) { toastError(R.string.toast_failure) }
+                return@launch
+            }
+            val uri = FileProvider.getUriForFile(
+                this@MainActivity,
+                BuildConfig.APPLICATION_ID + ".cache",
+                file
+            )
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                setType("text/plain")
+                setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                putExtra(Intent.EXTRA_STREAM, uri)
+            }
+            withContext(Dispatchers.Main) {
+                try {
+                    startActivity(
+                        Intent.createChooser(intent, getString(R.string.title_configuration_share))
+                    )
+                } catch (e: Exception) {
+                    LogUtil.e(AppConfig.TAG, "Failed to share locked config file", e)
+                    toastError(R.string.toast_failure)
+                }
             }
         }
     }

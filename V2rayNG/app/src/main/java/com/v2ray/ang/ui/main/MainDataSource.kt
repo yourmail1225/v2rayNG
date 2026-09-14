@@ -67,6 +67,9 @@ interface MainDataSource : Closeable {
     fun shareNonCustomConfigsToClipboard(guids: List<String>): Int
     fun share2QRCode(guid: String): android.graphics.Bitmap?
     fun share2Clipboard(guid: String): Boolean
+    fun shareLocked2QRCode(guid: String): android.graphics.Bitmap?
+    fun shareLocked2Clipboard(guid: String): Boolean
+    fun writeLockedPackageFile(guid: String): java.io.File?
 
     fun sendMsg2Service(msgId: Int, content: String)
     fun sendMsg2TestService(msg: TestServiceMessage, requestId: String? = null)
