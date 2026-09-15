@@ -53,8 +53,27 @@ jobs:
 
       - name: Compile Tun library
         run: |
-          chmod +x compile-hevtun.sh || true
-          ./compile-hevtun.sh || true
+          set -euo pipefail
+          chmod +x compile-hevtun.sh
+          ./compile-hevtun.sh
+
+      - name: Copy HEV tun libraries into app jniLibs
+        run: |
+          set -euo pipefail
+          # compile-hevtun.sh stages libhev-socks5-tunnel.so (in-process JNI for the
+          # hev tun mode of TProxyService) and libhevsockstun.so (root-mode engine)
+          # under the repository-root libs/. The app module packages jniLibs from
+          # V2rayNG/app/libs, so a missing copy means the APK cannot load the hev
+          # tunnel and VPN mode crashes with UnsatisfiedLinkError. Fail hard.
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            test -f "libs/$abi/libhev-socks5-tunnel.so"
+            test -f "libs/$abi/libhevsockstun.so"
+            mkdir -p "V2rayNG/app/libs/$abi"
+            cp "libs/$abi/libhev-socks5-tunnel.so" "V2rayNG/app/libs/$abi/"
+            cp "libs/$abi/libhevsockstun.so" "V2rayNG/app/libs/$abi/"
+          done
+          echo "HEV tun binaries ready:"
+          find V2rayNG/app/libs -name 'libhev*' -exec ls -lh {} \;
 
       - name: Fetch OpenVPN engine binaries
         run: |
@@ -105,25 +124,27 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:testFdroidDebugUnitTest --no-daemon
 
-      - name: Verify OpenVPN engine inside APK
+      - name: Verify native libraries inside APK
         run: |
           set -euo pipefail
           APKS=$(ls V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk)
           echo "APKs:"
           for apk in $APKS; do echo "  $apk"; done
           for abi in arm64-v8a armeabi-v7a x86_64 x86; do
-            found=0
-            for apk in $APKS; do
-              if unzip -l "$apk" | grep -q "lib/$abi/libopenvpn.so" && unzip -l "$apk" | grep -q "lib/$abi/libovpnexec.so"; then
-                found=1
-                break
+            for lib in libopenvpn.so libovpnexec.so libhev-socks5-tunnel.so libhevsockstun.so libgojni.so; do
+              found=0
+              for apk in $APKS; do
+                if unzip -l "$apk" | grep -q "lib/$abi/$lib"; then
+                  found=1
+                  break
+                fi
+              done
+              if [ "$found" != "1" ]; then
+                echo "ERROR: no APK carries $abi/$lib"
+                exit 1
               fi
+              echo "$abi/$lib present"
             done
-            if [ "$found" != "1" ]; then
-              echo "ERROR: no APK carries the $abi OpenVPN engine"
-              exit 1
-            fi
-            echo "$abi engine present"
           done
 
       - name: Upload APK Artifact
