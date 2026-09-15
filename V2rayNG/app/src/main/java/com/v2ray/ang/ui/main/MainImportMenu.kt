@@ -79,7 +79,14 @@ internal fun serverMenuActions(
             ServerMenuAction.Delete
         )
     } else {
-        ServerMenuAction.entries.filter { !it.isLockAction && !it.requiresLockedProfile }
+        listOf(
+            ServerMenuAction.ShareQRCode,
+            ServerMenuAction.ShareClipboard,
+            ServerMenuAction.ShareFullContent,
+            ServerMenuAction.Edit,
+            ServerMenuAction.Lock,
+            ServerMenuAction.Delete,
+        )
     }
     return candidates.filter { action ->
         (!isComplexProfile || action.supportsComplexProfiles) &&

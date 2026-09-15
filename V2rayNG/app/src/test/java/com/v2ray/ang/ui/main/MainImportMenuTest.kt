@@ -19,8 +19,15 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun regularMoreMenuContainsEveryNonLockActionInDisplayOrder() {
-        val expected = ServerMenuAction.entries.filter { !it.isLockAction && !it.requiresLockedProfile }
+    fun regularMoreMenuContainsShareEditLockAndDeleteInOrder() {
+        val expected = listOf(
+            ServerMenuAction.ShareQRCode,
+            ServerMenuAction.ShareClipboard,
+            ServerMenuAction.ShareFullContent,
+            ServerMenuAction.Edit,
+            ServerMenuAction.Lock,
+            ServerMenuAction.Delete,
+        )
         assertEquals(
             expected,
             serverMenuActions(isComplexProfile = false, includeManagementActions = true, isLocked = false),
@@ -40,6 +47,7 @@ class MainImportMenuTest {
         val expected = listOf(
             ServerMenuAction.ShareFullContent,
             ServerMenuAction.Edit,
+            ServerMenuAction.Lock,
             ServerMenuAction.Delete,
         )
         assertEquals(

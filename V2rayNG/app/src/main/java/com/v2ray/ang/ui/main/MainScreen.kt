@@ -267,6 +267,7 @@ fun MainScreen(
                                 shareTarget = ShareMethodTarget(guid, profile, true, isLocked)
                             },
                             onRemoveServer = removeServer,
+                            onToggleLockServer = { guid -> onAction(MainAction.ToggleProfileLock(guid)) },
                             contentPadding = PaddingValues(
                                 start = 0.dp,
                                 top = 0.dp,
