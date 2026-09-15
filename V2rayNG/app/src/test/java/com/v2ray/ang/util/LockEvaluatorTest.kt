@@ -26,7 +26,11 @@ class LockEvaluatorTest {
         val lock = GroupLockConfig(enabled = true, expiryEpochDay = 10)
         val decision = LockEvaluator.evaluate(lock, todayEpochDay = 11)
         assertTrue(decision is LockEvaluator.Decision.Denied)
-        assertEquals(LockEvaluator.DeniedReason.EXPIRED, (decision as LockEvaluator.Decision.Denied).reason)
+        assertEquals(
+            LockEvaluator.DeniedReason.EXPIRED,
+            (decision as LockEvaluator.Decision.Denied).reason
+        )
+        assertEquals(LockEvaluator.DeniedScope.GROUP, (decision as LockEvaluator.Decision.Denied).scope)
     }
 
     @Test
@@ -44,6 +48,7 @@ class LockEvaluatorTest {
             LockEvaluator.DeniedReason.DATA_LIMIT_REACHED,
             (decision as LockEvaluator.Decision.Denied).reason
         )
+        assertEquals(LockEvaluator.DeniedScope.GROUP, (decision as LockEvaluator.Decision.Denied).scope)
     }
 
     @Test
@@ -149,6 +154,86 @@ class LockEvaluatorTest {
         // Minute unexpired even though the legacy day already elapsed.
         assertTrue(
             LockEvaluator.evaluate(lock, todayEpochDay = 11, nowEpochMinute = 29_146_229L) is LockEvaluator.Decision.Allow
+        )
+    }
+
+    @Test
+    fun unlockedProfileIsAlwaysAllowed() {
+        assertTrue(
+            LockEvaluator.evaluateProfile(
+                locked = false,
+                expiryEpochMinute = 1,
+                dataLimitBytes = 1,
+                nowEpochMinute = 999,
+                currentUsedBytes = 999,
+            ) is LockEvaluator.Decision.Allow
+        )
+    }
+
+    @Test
+    fun lockedProfileWithoutConditionsIsAllowed() {
+        assertTrue(
+            LockEvaluator.evaluateProfile(locked = true) is LockEvaluator.Decision.Allow
+        )
+    }
+
+    @Test
+    fun profileExpiryDeniesOnOrAfterExpiryMinute() {
+        val denied = LockEvaluator.evaluateProfile(
+            locked = true,
+            expiryEpochMinute = 29_146_230L,
+            nowEpochMinute = 29_146_230L,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(
+            LockEvaluator.DeniedReason.EXPIRED,
+            (denied as LockEvaluator.Decision.Denied).reason
+        )
+        assertEquals(LockEvaluator.DeniedScope.PROFILE, denied.scope)
+        assertTrue(
+            LockEvaluator.evaluateProfile(
+                locked = true,
+                expiryEpochMinute = 29_146_230L,
+                nowEpochMinute = 29_146_229L,
+            ) is LockEvaluator.Decision.Allow
+        )
+    }
+
+    @Test
+    fun profileDataLimitReachedIsDenied() {
+        val denied = LockEvaluator.evaluateProfile(
+            locked = true,
+            dataLimitBytes = 100,
+            currentUsedBytes = 100,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(
+            LockEvaluator.DeniedReason.DATA_LIMIT_REACHED,
+            (denied as LockEvaluator.Decision.Denied).reason
+        )
+        assertEquals(LockEvaluator.DeniedScope.PROFILE, denied.scope)
+    }
+
+    @Test
+    fun profileDataLimitBelowThresholdIsAllowed() {
+        assertTrue(
+            LockEvaluator.evaluateProfile(
+                locked = true,
+                dataLimitBytes = 100,
+                currentUsedBytes = 99,
+            ) is LockEvaluator.Decision.Allow
+        )
+    }
+
+    @Test
+    fun groupDenialIsScopedToGroup() {
+        val denied = LockEvaluator.evaluate(
+            GroupLockConfig(enabled = true, expiryEpochMinute = 1),
+            nowEpochMinute = 2,
+        )
+        assertEquals(
+            LockEvaluator.DeniedScope.GROUP,
+            (denied as LockEvaluator.Decision.Denied).scope
         )
     }
 }

@@ -53,6 +53,7 @@ object CoreServiceManager {
     private val coreController: CoreController = CoreNativeManager.newCoreController(CoreCallback())
     private val mMsgReceive = ReceiveMessageHandler()
     private var currentConfig: ProfileItem? = null
+    private var currentProfileGuid: String? = null
     private var processFinder: XrayProcessFinder? = null
     private var browserDialer: IDialerService? = null
     private var networkMonitor: NetworkMonitor? = null
@@ -108,17 +109,39 @@ object CoreServiceManager {
             return false
         }
 
-        val runningConfig = MmkvManager.getSelectServer()?.let { MmkvManager.decodeServerConfig(it) }
-        val deniedReason = runningConfig?.let { config ->
-            val decision = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(config.subscriptionId))
-            (decision as? LockEvaluator.Decision.Denied)?.reason
+        val runningGuid = MmkvManager.getSelectServer()
+        val runningConfig = runningGuid?.let { MmkvManager.decodeServerConfig(it) }
+        val denied = runningGuid?.let { guid ->
+            val groupDenied = runningConfig?.let {
+                LockEvaluator.evaluate(MmkvManager.decodeGroupLock(it.subscriptionId))
+            }
+            if (groupDenied is LockEvaluator.Decision.Denied) {
+                groupDenied
+            } else {
+                val aff = MmkvManager.decodeServerAffiliationInfo(guid)
+                if (aff != null && aff.locked &&
+                    (aff.expiryEpochMinute != 0L || aff.dataLimitBytes != 0L)
+                ) {
+                    LockEvaluator.evaluateProfile(
+                        locked = true,
+                        expiryEpochMinute = aff.expiryEpochMinute,
+                        dataLimitBytes = aff.dataLimitBytes,
+                        currentUsedBytes = aff.usedBytes,
+                    ) as? LockEvaluator.Decision.Denied
+                } else {
+                    null
+                }
+            }
         }
-        if (deniedReason != null) {
-            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group lock denies ${runningConfig.remarks}")
+        if (denied != null) {
+            LogUtil.i(
+                AppConfig.TAG,
+                "StartCore-Manager: Lock denies ${runningConfig?.remarks ?: "profile"}"
+            )
             MessageHelper.sendMsg2UI(
                 service,
                 AppConfig.MSG_STATE_LOCK_DENIED,
-                LockDeniedMessage.resolve(service, deniedReason)
+                LockDeniedMessage.resolve(service, denied.reason, denied.scope)
             )
             MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, "")
             NotificationManager.cancelNotification()
@@ -165,6 +188,7 @@ object CoreServiceManager {
         }
 
         currentConfig = config
+        currentProfileGuid = guid
         var tunFd = vpnInterface?.fd ?: 0
         val dialerMode = BrowserDialerMode.from(config.browserDialerMode)
         val dialerAddr = if (dialerMode != null) {
@@ -224,6 +248,7 @@ object CoreServiceManager {
         networkMonitor?.unregister()
         networkMonitor = null
         currentVpnInterface = null
+        currentProfileGuid = null
 
         if (isRunning()) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -318,17 +343,43 @@ object CoreServiceManager {
         if (bytes <= 0L) return
         val groupId = subscriptionId ?: currentConfig?.subscriptionId ?: return
         val lock = MmkvManager.decodeGroupLock(groupId)
-        if (!lock.enabled || lock.dataLimitBytes <= 0L) return
-
-        val used = MmkvManager.addGroupUsedBytes(groupId, bytes)
-        if (used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
+        if (lock.enabled && lock.dataLimitBytes > 0L) {
+            val used = MmkvManager.addGroupUsedBytes(groupId, bytes)
+            if (used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
+                dataLimitNoticeShown = true
+                val service = getService() ?: return
+                LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group data limit reached, stopping")
+                MessageHelper.sendMsg2UI(
+                    service,
+                    AppConfig.MSG_STATE_LOCK_DENIED,
+                    LockDeniedMessage.resolve(
+                        service,
+                        LockEvaluator.DeniedReason.DATA_LIMIT_REACHED,
+                        LockEvaluator.DeniedScope.GROUP
+                    )
+                )
+                MessageHelper.sendMsg2Service(service, AppConfig.MSG_STATE_STOP, "")
+            }
+        }
+        // Profile locks are only charged for the xray run modes, which track the
+        // selected profile GUID. The OpenVPN engine passes an explicit group id and
+        // keeps no profile reference, so it never charges a profile here.
+        val profileGuid = currentProfileGuid ?: return
+        val aff = MmkvManager.decodeServerAffiliationInfo(profileGuid) ?: return
+        if (!aff.locked || aff.dataLimitBytes <= 0L) return
+        val used = MmkvManager.addProfileUsedBytes(profileGuid, bytes)
+        if (used >= aff.dataLimitBytes && !dataLimitNoticeShown) {
             dataLimitNoticeShown = true
             val service = getService() ?: return
-            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group data limit reached, stopping")
+            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Profile data limit reached, stopping")
             MessageHelper.sendMsg2UI(
                 service,
                 AppConfig.MSG_STATE_LOCK_DENIED,
-                LockDeniedMessage.resolve(service, LockEvaluator.DeniedReason.DATA_LIMIT_REACHED)
+                LockDeniedMessage.resolve(
+                    service,
+                    LockEvaluator.DeniedReason.DATA_LIMIT_REACHED,
+                    LockEvaluator.DeniedScope.PROFILE
+                )
             )
             MessageHelper.sendMsg2Service(service, AppConfig.MSG_STATE_STOP, "")
         }
@@ -348,7 +399,11 @@ object CoreServiceManager {
                 if (!isRunning()) return@launch
                 val groupId = currentConfig?.subscriptionId ?: continue
                 val lock = MmkvManager.decodeGroupLock(groupId)
-                if (!lock.enabled || lock.dataLimitBytes <= 0L) continue
+                val profileGuid = currentProfileGuid?.takeIf { currentConfig != null }
+                val profile = profileGuid?.let { MmkvManager.decodeServerAffiliationInfo(it) }
+                val hasGroupLimit = lock.enabled && lock.dataLimitBytes > 0L
+                val hasProfileLimit = profile != null && profile.locked && profile.dataLimitBytes > 0L
+                if (!hasGroupLimit && !hasProfileLimit) continue
                 val total = queryAllOutboundTrafficStats()
                     .filter { it.tag != AppConfig.TAG_DIRECT && it.tag != AppConfig.TAG_BLOCKED }
                     .sumOf { it.value }

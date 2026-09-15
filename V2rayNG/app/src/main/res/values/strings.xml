@@ -588,6 +588,10 @@
     <string name="lock_group_used_of_limit">%1$s MB used of %2$s MB</string>
     <string name="lock_group_expired">Connection blocked: the lock for this subscription group has expired.</string>
     <string name="lock_group_data_exceeded">Connection blocked: this subscription group has reached its data limit.</string>
+    <string name="lock_profile_settings">Lock settings</string>
+    <string name="lock_profile_enable">Lock this profile</string>
+    <string name="lock_profile_expired">Connection blocked: this profile\'s lock has expired.</string>
+    <string name="lock_profile_data_exceeded">Connection blocked: this profile has reached its data limit.</string>
     <string name="action_save">Save</string>
     <string name="action_reset">Reset usage</string>
     <string name="toast_save_success">Saved</string>

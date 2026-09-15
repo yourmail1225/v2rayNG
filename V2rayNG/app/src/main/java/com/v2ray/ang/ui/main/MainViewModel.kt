@@ -238,6 +238,13 @@ class MainViewModel(
                 _uiState.update { it.copy(groupLockEditor = null) }
             }
 
+            is MainAction.OpenProfileLockEditor -> openProfileLockEditor(action.guid)
+            is MainAction.SaveProfileLock -> saveProfileLock(action)
+            is MainAction.ResetProfileUsedBytes -> resetProfileUsedBytes(action.guid)
+            MainAction.DismissProfileLockEditor -> {
+                _uiState.update { it.copy(profileLockEditor = null) }
+            }
+
             MainAction.DismissLockNotice -> {
                 _uiState.update { it.copy(lockNotice = null) }
             }
@@ -562,22 +569,37 @@ class MainViewModel(
     fun isProfileLocked(guid: String): Boolean = dataSource.isProfileLocked(guid)
 
     /**
-     * Returns the group-lock denial reason for a profile, or null when the profile's
-     * subscription group accepts connections.
+     * Returns the lock-denial for a profile, or null when both its group and its own
+     * lock accept connections.
      */
-    fun lockDeniedReasonFor(guid: String?): LockEvaluator.DeniedReason? {
+    fun lockDeniedReasonFor(guid: String?): LockEvaluator.Decision.Denied? {
         val currentGuid = guid ?: return null
         val profile = dataSource.decodeServerConfig(currentGuid) ?: return null
-        val lock = dataSource.decodeGroupLock(profile.subscriptionId)
-        return (LockEvaluator.evaluate(lock) as? LockEvaluator.Decision.Denied)?.reason
+        val groupDenied = LockEvaluator.evaluate(dataSource.decodeGroupLock(profile.subscriptionId))
+        if (groupDenied is LockEvaluator.Decision.Denied) {
+            return groupDenied
+        }
+        val aff = dataSource.decodeAffiliationInfo(currentGuid)
+        return LockEvaluator.evaluateProfile(
+            locked = aff?.locked == true,
+            expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
+            dataLimitBytes = aff?.dataLimitBytes ?: 0L,
+            currentUsedBytes = aff?.usedBytes ?: 0L,
+        ) as? LockEvaluator.Decision.Denied
     }
 
     /**
-     * Shows the lock-denied notice dialog for [reason] without starting the service.
+     * Shows the lock-denied notice dialog for [denied] without starting the service.
      */
-    fun notifyLockDenied(reason: LockEvaluator.DeniedReason) {
+    fun notifyLockDenied(denied: LockEvaluator.Decision.Denied) {
         _uiState.update {
-            it.copy(lockNotice = LockDeniedMessage.resolve(localizedContext, reason))
+            it.copy(
+                lockNotice = LockDeniedMessage.resolve(
+                    localizedContext,
+                    denied.reason,
+                    denied.scope
+                )
+            )
         }
     }
 
@@ -585,6 +607,66 @@ class MainViewModel(
         val locked = !dataSource.isProfileLocked(guid)
         dataSource.setProfileLocked(guid, locked)
         toastSuccess(if (locked) R.string.toast_profile_locked else R.string.toast_profile_unlocked)
+        refreshGroupForProfile(guid)
+    }
+
+    /**
+     * Rebuilds the group UI state of a profile after its lock configuration changed,
+     * so the row's locked icons and menus reflect the persisted value immediately.
+     */
+    private fun refreshGroupForProfile(guid: String) {
+        val profile = dataSource.decodeServerConfig(guid) ?: return
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                val servers = loadGroup(profile.subscriptionId, forceRefresh = true)
+                updateGroupUi(profile.subscriptionId, servers)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                LogUtil.e(AppConfig.TAG, "Profile lock group refresh failed", e)
+            }
+        }
+    }
+
+    private fun openProfileLockEditor(guid: String) {
+        val profile = dataSource.decodeServerConfig(guid) ?: return
+        val aff = dataSource.decodeAffiliationInfo(guid)
+        _uiState.update {
+            it.copy(
+                profileLockEditor = ProfileLockEditorUi(
+                    guid = guid,
+                    serverName = profile.remarks,
+                    enabled = aff?.locked == true,
+                    expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
+                    dataLimitBytes = aff?.dataLimitBytes ?: 0L,
+                    usedBytes = aff?.usedBytes ?: 0L,
+                )
+            )
+        }
+    }
+
+    private fun saveProfileLock(action: MainAction.SaveProfileLock) {
+        if (action.dataLimitBytes < 0L) {
+            toastError(R.string.lock_group_require_condition)
+            return
+        }
+        dataSource.setProfileLockConfig(
+            action.guid,
+            action.enabled,
+            action.expiryEpochMinute,
+            action.dataLimitBytes,
+        )
+        _uiState.update { it.copy(profileLockEditor = null) }
+        toastSuccess(if (action.enabled) R.string.toast_profile_locked else R.string.toast_profile_unlocked)
+        refreshGroupForProfile(action.guid)
+    }
+
+    private fun resetProfileUsedBytes(guid: String) {
+        dataSource.resetProfileUsedBytes(guid)
+        _uiState.update {
+            it.copy(profileLockEditor = it.profileLockEditor?.copy(usedBytes = 0L))
+        }
+        toastSuccess(R.string.toast_reset_success)
     }
 
     private fun exportLockedAsync() {

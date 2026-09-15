@@ -150,6 +150,23 @@ fun MainScreen(
             onReset = { onAction(MainAction.ResetGroupData(editor.groupId)) },
         )
     }
+    uiState.profileLockEditor?.let { editor ->
+        ProfileLockEditorDialog(
+            editor = editor,
+            onDismiss = { onAction(MainAction.DismissProfileLockEditor) },
+            onSave = { enabled, expiryEpochMinute, dataLimitBytes ->
+                onAction(
+                    MainAction.SaveProfileLock(
+                        guid = editor.guid,
+                        enabled = enabled,
+                        expiryEpochMinute = expiryEpochMinute,
+                        dataLimitBytes = dataLimitBytes,
+                    )
+                )
+            },
+            onReset = { onAction(MainAction.ResetProfileUsedBytes(editor.guid)) },
+        )
+    }
     if (shareQRCodeBitmap != null) {
         QRCodeDialog(bitmap = shareQRCodeBitmap, onDismiss = { onAction(MainAction.DismissQRCodeDialog) })
     }
@@ -267,7 +284,7 @@ fun MainScreen(
                                 shareTarget = ShareMethodTarget(guid, profile, true, isLocked)
                             },
                             onRemoveServer = removeServer,
-                            onToggleLockServer = { guid -> onAction(MainAction.ToggleProfileLock(guid)) },
+                            onLockServer = { guid -> onAction(MainAction.OpenProfileLockEditor(guid)) },
                             contentPadding = PaddingValues(
                                 start = 0.dp,
                                 top = 0.dp,

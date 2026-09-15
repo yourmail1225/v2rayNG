@@ -57,12 +57,13 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedProfileMenuShowsLockedShareUnlockAndDeleteInOrder() {
+    fun lockedProfileMenuShowsLockedShareUnlockSettingsAndDeleteInOrder() {
         val expected = listOf(
             ServerMenuAction.ShareLockedQRCode,
             ServerMenuAction.ShareLockedClipboard,
             ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
+            ServerMenuAction.LockSettings,
             ServerMenuAction.Delete,
         )
         assertEquals(
@@ -72,12 +73,13 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedComplexProfileMenuShowsLockedShareUnlockAndDeleteInOrder() {
+    fun lockedComplexProfileMenuShowsLockedShareUnlockSettingsAndDeleteInOrder() {
         val expected = listOf(
             ServerMenuAction.ShareLockedQRCode,
             ServerMenuAction.ShareLockedClipboard,
             ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
+            ServerMenuAction.LockSettings,
             ServerMenuAction.Delete,
         )
         assertEquals(

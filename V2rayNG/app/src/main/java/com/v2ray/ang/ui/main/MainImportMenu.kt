@@ -61,6 +61,7 @@ internal enum class ServerMenuAction(
     Delete(R.string.action_delete, isShareAction = false, supportsComplexProfiles = true),
     Lock(R.string.lock_profile, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = false),
     Unlock(R.string.unlock_profile, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = true),
+    LockSettings(R.string.lock_profile_settings, isShareAction = false, supportsComplexProfiles = true, isLockAction = true, requiresLockedProfile = true),
 }
 
 internal fun serverMenuActions(
@@ -69,13 +70,14 @@ internal fun serverMenuActions(
     isLocked: Boolean,
 ): List<ServerMenuAction> {
     val candidates = if (isLocked) {
-        // A locked profile can only be shared as a locked artifact, unlocked, or
-        // deleted; its generic share and edit actions are removed.
+        // A locked profile can only be shared as a locked artifact, unlocked, its
+        // lock settings adjusted, or deleted; generic share and edit are removed.
         listOf(
             ServerMenuAction.ShareLockedQRCode,
             ServerMenuAction.ShareLockedClipboard,
             ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
+            ServerMenuAction.LockSettings,
             ServerMenuAction.Delete
         )
     } else {
@@ -147,6 +149,7 @@ fun ShareMethodDialog(
                 ServerMenuAction.Edit -> onAction(MainAction.EditServer(guid, profile))
                 ServerMenuAction.Delete -> onRemove(guid)
                 ServerMenuAction.Lock,
+                ServerMenuAction.LockSettings -> onAction(MainAction.OpenProfileLockEditor(guid))
                 ServerMenuAction.Unlock -> onAction(MainAction.ToggleProfileLock(guid))
             }
         },

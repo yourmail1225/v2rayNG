@@ -171,6 +171,19 @@ AppConfig.MSG_STATE_STOP_SUCCESS -> MainServiceEvent.StateStopSuccess
         MmkvManager.encodeProfileLocked(guid, locked)
     }
 
+    override fun setProfileLockConfig(
+        guid: String,
+        locked: Boolean,
+        expiryEpochMinute: Long,
+        dataLimitBytes: Long,
+    ) {
+        MmkvManager.encodeProfileLockConfig(guid, locked, expiryEpochMinute, dataLimitBytes)
+    }
+
+    override fun resetProfileUsedBytes(guid: String) {
+        MmkvManager.resetProfileUsedBytes(guid)
+    }
+
     override fun decodeGroupLock(groupId: String): GroupLockConfig =
         MmkvManager.decodeGroupLock(groupId)
 

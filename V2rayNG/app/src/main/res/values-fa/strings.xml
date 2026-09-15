@@ -588,6 +588,10 @@
     <string name="lock_group_used_of_limit">%1$s از %2$s مگابایت مصرف شده</string>
     <string name="lock_group_expired">اتصال مسدود شد: قفل این گروه به پایان رسیده است</string>
     <string name="lock_group_data_exceeded">اتصال مسدود شد: سهمیه مصرف این گروه به پایان رسیده است</string>
+    <string name="lock_profile_settings">تنظیمات قفل</string>
+    <string name="lock_profile_enable">قفل کردن این پروفایل</string>
+    <string name="lock_profile_expired">اتصال مسدود شد: قفل این سرور به پایان رسیده است</string>
+    <string name="lock_profile_data_exceeded">اتصال مسدود شد: سهمیه مصرف این سرور به پایان رسیده است</string>
     <string name="action_save">ذخیره</string>
     <string name="action_reset">بازنشانی مصرف</string>
     <string name="toast_save_success">ذخیره شد</string>

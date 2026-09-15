@@ -596,6 +596,10 @@
     <string name="lock_group_used_of_limit">تم استخدام %1$s من %2$s ميجابايت</string>
     <string name="lock_group_expired">تم حظر الاتصال: انتهى قفل هذه المجموعة</string>
     <string name="lock_group_data_exceeded">تم حظر الاتصال: وصلت هذه المجموعة إلى حد البيانات</string>
+    <string name="lock_profile_settings">إعدادات القفل</string>
+    <string name="lock_profile_enable">قفل هذا الخادم</string>
+    <string name="lock_profile_expired">تم حظر الاتصال: انتهى قفل هذا الخادم</string>
+    <string name="lock_profile_data_exceeded">تم حظر الاتصال: وصل هذا الخادم إلى حد البيانات</string>
     <string name="action_save">حفظ</string>
     <string name="action_reset">إعادة تعيين الاستخدام</string>
     <string name="toast_save_success">تم الحفظ</string>

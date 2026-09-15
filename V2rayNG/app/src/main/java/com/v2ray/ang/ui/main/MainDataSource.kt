@@ -36,6 +36,8 @@ interface MainDataSource : Closeable {
 
     fun isProfileLocked(guid: String): Boolean
     fun setProfileLocked(guid: String, locked: Boolean)
+    fun setProfileLockConfig(guid: String, locked: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long)
+    fun resetProfileUsedBytes(guid: String)
 
     fun decodeGroupLock(groupId: String): GroupLockConfig
     fun encodeGroupLock(groupId: String, config: GroupLockConfig)

@@ -86,16 +86,27 @@ class CoreVpnService : VpnService(), ServiceControl {
         // the always-on restart path and the OpenVPN dispatch below.
         val mainGuid = MmkvManager.getSelectServer()
         val mainConfig = mainGuid?.let { MmkvManager.decodeServerConfig(it) }
-        val deniedReason = mainConfig?.let { config ->
-            val decision = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(config.subscriptionId))
-            (decision as? LockEvaluator.Decision.Denied)?.reason
+        val deniedReason = mainGuid?.let { guid ->
+            if (mainConfig?.subscriptionId != null) {
+                val groupDenied = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(mainConfig.subscriptionId))
+                if (groupDenied is LockEvaluator.Decision.Denied) {
+                    return@let groupDenied
+                }
+            }
+            val aff = MmkvManager.decodeServerAffiliationInfo(guid)
+            LockEvaluator.evaluateProfile(
+                locked = aff?.locked == true,
+                expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
+                dataLimitBytes = aff?.dataLimitBytes ?: 0L,
+                currentUsedBytes = aff?.usedBytes ?: 0L,
+            ) as? LockEvaluator.Decision.Denied
         }
         if (deniedReason != null) {
-            LogUtil.i(AppConfig.TAG, "StartCore-VPN: Group lock denies connection")
+            LogUtil.i(AppConfig.TAG, "StartCore-VPN: Lock denies connection")
             MessageHelper.sendMsg2UI(
                 this,
                 AppConfig.MSG_STATE_LOCK_DENIED,
-                LockDeniedMessage.resolve(this, deniedReason)
+                LockDeniedMessage.resolve(this, deniedReason.reason, deniedReason.scope)
             )
             stopAllService()
             stopSelf()

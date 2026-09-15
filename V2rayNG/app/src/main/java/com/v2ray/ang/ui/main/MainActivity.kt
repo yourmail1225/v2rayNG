@@ -347,9 +347,9 @@ class MainActivity : HelperBaseComponentActivity() {
     }
 
     private fun setSelectServer(guid: String) {
-        val reason = mainViewModel.lockDeniedReasonFor(guid)
-        if (reason != null) {
-            mainViewModel.notifyLockDenied(reason)
+        val denied = mainViewModel.lockDeniedReasonFor(guid)
+        if (denied != null) {
+            mainViewModel.notifyLockDenied(denied)
             return
         }
         val selected = mainViewModel.uiState.value.selectedGuid

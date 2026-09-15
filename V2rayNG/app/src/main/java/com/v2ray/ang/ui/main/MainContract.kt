@@ -26,6 +26,18 @@ data class GroupLockEditorUi(
 )
 
 /**
+ * Profile lock editor state, opened from the lock affordance of a server row.
+ */
+data class ProfileLockEditorUi(
+    val guid: String,
+    val serverName: String,
+    val enabled: Boolean = false,
+    val expiryEpochMinute: Long = 0L,
+    val dataLimitBytes: Long = 0L,
+    val usedBytes: Long = 0L,
+)
+
+/**
  * Main UI state
  */
 data class MainUiState(
@@ -40,7 +52,8 @@ data class MainUiState(
     val doubleColumnDisplay: Boolean = false,
     val shareQRCodeBitmap: android.graphics.Bitmap? = null,
     val lockNotice: String? = null,
-    val groupLockEditor: GroupLockEditorUi? = null
+    val groupLockEditor: GroupLockEditorUi? = null,
+    val profileLockEditor: ProfileLockEditorUi? = null
 )
 
 /**
@@ -95,6 +108,15 @@ sealed interface MainAction {
     ) : MainAction
     data class ResetGroupData(val groupId: String) : MainAction
     data object DismissGroupLockEditor : MainAction
+    data class OpenProfileLockEditor(val guid: String) : MainAction
+    data class SaveProfileLock(
+        val guid: String,
+        val enabled: Boolean,
+        val expiryEpochMinute: Long,
+        val dataLimitBytes: Long,
+    ) : MainAction
+    data class ResetProfileUsedBytes(val guid: String) : MainAction
+    data object DismissProfileLockEditor : MainAction
     data object DismissLockNotice : MainAction
 
     data object LocateHandled : MainAction

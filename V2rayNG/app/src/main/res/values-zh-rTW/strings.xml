@@ -586,6 +586,10 @@
     <string name="lock_group_used_of_limit">已使用 %1$s / %2$s MB</string>
     <string name="lock_group_expired">連線已封鎖：此群組的鎖定已到期</string>
     <string name="lock_group_data_exceeded">連線已封鎖：此群組已達資料上限</string>
+    <string name="lock_profile_settings">鎖定設定</string>
+    <string name="lock_profile_enable">鎖定此伺服器</string>
+    <string name="lock_profile_expired">連線已封鎖：此伺服器的鎖定已到期</string>
+    <string name="lock_profile_data_exceeded">連線已封鎖：此伺服器已達資料上限</string>
     <string name="action_save">儲存</string>
     <string name="action_reset">重設用量</string>
     <string name="toast_save_success">已儲存</string>

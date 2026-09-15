@@ -76,7 +76,7 @@ fun GroupPagerPage(
     onShareServer: (String, ProfileItem, Boolean) -> Unit,
     onMoreServer: (String, ProfileItem, Boolean) -> Unit,
     onRemoveServer: (String) -> Unit,
-    onToggleLockServer: (String) -> Unit,
+    onLockServer: (String) -> Unit,
     contentPadding: PaddingValues
 ) {
     val groupStateFlow = remember(groupId) {
@@ -90,7 +90,7 @@ fun GroupPagerPage(
         onShareServer,
         onMoreServer,
         onRemoveServer,
-        onToggleLockServer,
+        onLockServer,
     ) {
         ServerRowActions(
             select = onSelectServer,
@@ -98,7 +98,7 @@ fun GroupPagerPage(
             share = onShareServer,
             more = onMoreServer,
             remove = onRemoveServer,
-            toggleLock = onToggleLockServer,
+            lock = onLockServer,
         )
     }
     ServerListPage(
@@ -125,7 +125,7 @@ private class ServerRowActions(
     val share: (String, ProfileItem, Boolean) -> Unit,
     val more: (String, ProfileItem, Boolean) -> Unit,
     val remove: (String) -> Unit,
-    val toggleLock: (String) -> Unit,
+    val lock: (String) -> Unit,
 )
 
 @Composable
@@ -401,7 +401,7 @@ private fun ServerListItem(
                             Modifier.size(24.dp)
                         )
                     }
-                    IconButton(onClick = { actions.toggleLock(row.guid) }, Modifier.size(36.dp)) {
+                    IconButton(onClick = { actions.lock(row.guid) }, Modifier.size(36.dp)) {
                         Icon(
                             painterResource(R.drawable.ic_lock_24dp),
                             stringResource(R.string.lock_profile),

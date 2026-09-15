@@ -586,6 +586,10 @@
     <string name="lock_group_used_of_limit">Đã dùng %1$s trong %2$s MB</string>
     <string name="lock_group_expired">Kết nối bị chặn: khóa của nhóm này đã hết hạn</string>
     <string name="lock_group_data_exceeded">Kết nối bị chặn: nhóm này đã đạt giới hạn dữ liệu</string>
+    <string name="lock_profile_settings">Cài đặt khóa</string>
+    <string name="lock_profile_enable">Khóa máy chủ này</string>
+    <string name="lock_profile_expired">Kết nối bị chặn: khóa của máy chủ này đã hết hạn</string>
+    <string name="lock_profile_data_exceeded">Kết nối bị chặn: máy chủ này đã đạt giới hạn dữ liệu</string>
     <string name="action_save">Lưu</string>
     <string name="action_reset">Đặt lại mức sử dụng</string>
     <string name="toast_save_success">Đã lưu</string>

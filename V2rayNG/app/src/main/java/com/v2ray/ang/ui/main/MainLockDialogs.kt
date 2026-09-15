@@ -53,17 +53,66 @@ fun GroupLockEditorDialog(
     onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
 ) {
-    var enabled by rememberSaveable(editor.groupId) { mutableStateOf(editor.enabled) }
-    var expiryText by rememberSaveable(editor.groupId) {
-        mutableStateOf(LockEvaluator.formatEpochMinute(editor.expiryEpochMinute))
+    LockEditorDialog(
+        title = { Text(editor.groupName) },
+        enabledLabel = stringResource(R.string.lock_group_enable),
+        editorKey = editor.groupId,
+        enabled = editor.enabled,
+        expiryEpochMinute = editor.expiryEpochMinute,
+        dataLimitBytes = editor.dataLimitBytes,
+        usedBytes = editor.usedBytes,
+        onDismiss = onDismiss,
+        onSave = onSave,
+        onReset = onReset,
+    )
+}
+
+/** Edits the expiry moment and data-volume limit of a server-profile lock. */
+@Composable
+fun ProfileLockEditorDialog(
+    editor: ProfileLockEditorUi,
+    onDismiss: () -> Unit,
+    onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
+    onReset: () -> Unit,
+) {
+    LockEditorDialog(
+        title = { Text(editor.serverName) },
+        enabledLabel = stringResource(R.string.lock_profile_enable),
+        editorKey = editor.guid,
+        enabled = editor.enabled,
+        expiryEpochMinute = editor.expiryEpochMinute,
+        dataLimitBytes = editor.dataLimitBytes,
+        usedBytes = editor.usedBytes,
+        onDismiss = onDismiss,
+        onSave = onSave,
+        onReset = onReset,
+    )
+}
+
+@Composable
+private fun LockEditorDialog(
+    title: @Composable () -> Unit,
+    enabledLabel: String,
+    editorKey: String,
+    enabled: Boolean,
+    expiryEpochMinute: Long,
+    dataLimitBytes: Long,
+    usedBytes: Long,
+    onDismiss: () -> Unit,
+    onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
+    onReset: () -> Unit,
+) {
+    var enabledState by rememberSaveable(editorKey) { mutableStateOf(enabled) }
+    var expiryText by rememberSaveable(editorKey) {
+        mutableStateOf(LockEvaluator.formatEpochMinute(expiryEpochMinute))
     }
-    var limitMbText by rememberSaveable(editor.groupId) {
-        mutableStateOf((editor.dataLimitBytes / MB).takeIf { it > 0L }?.toString().orEmpty())
+    var limitMbText by rememberSaveable(editorKey) {
+        mutableStateOf((dataLimitBytes / MB).takeIf { it > 0L }?.toString().orEmpty())
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(editor.groupName) },
+        title = { title() },
         text = {
             Column(
                 modifier = Modifier
@@ -74,9 +123,9 @@ fun GroupLockEditorDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 SettingsSwitchItem(
-                    title = stringResource(R.string.lock_group_enable),
-                    checked = enabled,
-                    onCheckedChange = { enabled = it }
+                    title = enabledLabel,
+                    checked = enabledState,
+                    onCheckedChange = { enabledState = it }
                 )
                 OutlinedTextField(
                     value = expiryText,
@@ -100,8 +149,8 @@ fun GroupLockEditorDialog(
                 Text(
                     text = stringResource(
                         R.string.lock_group_used_of_limit,
-                        mb(editor.usedBytes),
-                        mb(editor.dataLimitBytes)
+                        mb(usedBytes),
+                        mb(dataLimitBytes)
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -125,7 +174,7 @@ fun GroupLockEditorDialog(
                     } else {
                         0L
                     }
-                    onSave(enabled, expiry, limitBytes)
+                    onSave(enabledState, expiry, limitBytes)
                 }
             ) {
                 Text(stringResource(R.string.action_save))

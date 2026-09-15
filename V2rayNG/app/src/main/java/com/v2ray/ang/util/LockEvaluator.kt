@@ -21,9 +21,15 @@ object LockEvaluator {
         DATA_LIMIT_REACHED
     }
 
+    /** Whether a denial comes from a subscription-group lock or a profile lock. */
+    enum class DeniedScope {
+        GROUP,
+        PROFILE
+    }
+
     sealed class Decision {
         data object Allow : Decision()
-        data class Denied(val reason: DeniedReason) : Decision()
+        data class Denied(val reason: DeniedReason, val scope: DeniedScope) : Decision()
     }
 
     /**
@@ -157,13 +163,41 @@ object LockEvaluator {
         if (lock == null || !lock.enabled) return Decision.Allow
         if (lock.expiryEpochMinute != 0L) {
             if (nowEpochMinute >= lock.expiryEpochMinute) {
-                return Decision.Denied(DeniedReason.EXPIRED)
+                return Decision.Denied(DeniedReason.EXPIRED, DeniedScope.GROUP)
             }
         } else if (lock.expiryEpochDay != 0L && todayEpochDay > lock.expiryEpochDay) {
-            return Decision.Denied(DeniedReason.EXPIRED)
+            return Decision.Denied(DeniedReason.EXPIRED, DeniedScope.GROUP)
         }
         if (lock.dataLimitBytes != 0L && currentUsedBytes >= lock.dataLimitBytes) {
-            return Decision.Denied(DeniedReason.DATA_LIMIT_REACHED)
+            return Decision.Denied(DeniedReason.DATA_LIMIT_REACHED, DeniedScope.GROUP)
+        }
+        return Decision.Allow
+    }
+
+    /**
+     * Evaluates whether a server profile's lock currently blocks a connection.
+     * A lock with no expiration or data limit only prevents editing and never
+     * blocks connecting.
+     *
+     * @param locked Whether editing the profile is locked.
+     * @param expiryEpochMinute The expiry wall-clock minute, 0 for none.
+     * @param dataLimitBytes The data-volume limit, 0 for none.
+     * @param nowEpochMinute The current wall-clock minute.
+     * @param currentUsedBytes The data already consumed by the profile.
+     */
+    fun evaluateProfile(
+        locked: Boolean,
+        expiryEpochMinute: Long = 0L,
+        dataLimitBytes: Long = 0L,
+        nowEpochMinute: Long = todayEpochMinute(),
+        currentUsedBytes: Long = 0L,
+    ): Decision {
+        if (!locked) return Decision.Allow
+        if (expiryEpochMinute != 0L && nowEpochMinute >= expiryEpochMinute) {
+            return Decision.Denied(DeniedReason.EXPIRED, DeniedScope.PROFILE)
+        }
+        if (dataLimitBytes != 0L && currentUsedBytes >= dataLimitBytes) {
+            return Decision.Denied(DeniedReason.DATA_LIMIT_REACHED, DeniedScope.PROFILE)
         }
         return Decision.Allow
     }

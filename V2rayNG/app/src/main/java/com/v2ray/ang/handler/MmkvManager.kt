@@ -528,6 +528,54 @@ object MmkvManager {
     }
 
     /**
+     * Sets the lock configuration of a server profile, preserving the test delay
+     * and already consumed bytes.
+     *
+     * @param guid The server GUID.
+     */
+    fun encodeProfileLockConfig(guid: String, locked: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) {
+        if (guid.isBlank()) {
+            return
+        }
+        val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        aff.locked = locked
+        aff.expiryEpochMinute = expiryEpochMinute
+        aff.dataLimitBytes = dataLimitBytes
+        serverAffStorage.encode(guid, JsonUtil.toJson(aff))
+    }
+
+    /**
+     * Consumes [bytes] against a server profile's lock and returns the new usage.
+     *
+     * @param guid The server GUID.
+     * @param bytes The bytes to add.
+     * @return The profile's total used bytes after the addition.
+     */
+    fun addProfileUsedBytes(guid: String, bytes: Long): Long {
+        if (guid.isBlank()) {
+            return 0L
+        }
+        val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        aff.usedBytes += bytes
+        serverAffStorage.encode(guid, JsonUtil.toJson(aff))
+        return aff.usedBytes
+    }
+
+    /**
+     * Resets the consumed byte counter of a server profile's lock.
+     *
+     * @param guid The server GUID.
+     */
+    fun resetProfileUsedBytes(guid: String) {
+        if (guid.isBlank()) {
+            return
+        }
+        val aff = decodeServerAffiliationInfo(guid) ?: return
+        aff.usedBytes = 0L
+        serverAffStorage.encode(guid, JsonUtil.toJson(aff))
+    }
+
+    /**
      * Removes all server configurations.
      *
      * @return The number of server configurations removed.
