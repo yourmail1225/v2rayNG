@@ -112,25 +112,11 @@ object CoreServiceManager {
         val runningGuid = MmkvManager.getSelectServer()
         val runningConfig = runningGuid?.let { MmkvManager.decodeServerConfig(it) }
         val denied = runningGuid?.let { guid ->
-            val groupDenied = runningConfig?.let {
-                LockEvaluator.evaluate(MmkvManager.decodeGroupLock(it.subscriptionId))
-            }
-            if (groupDenied is LockEvaluator.Decision.Denied) {
-                groupDenied
-            } else {
-                val aff = MmkvManager.decodeServerAffiliationInfo(guid)
-                if (aff != null && aff.locked &&
-                    (aff.expiryEpochMinute != 0L || aff.dataLimitBytes != 0L)
-                ) {
-                    LockEvaluator.evaluateProfile(
-                        locked = true,
-                        expiryEpochMinute = aff.expiryEpochMinute,
-                        dataLimitBytes = aff.dataLimitBytes,
-                        currentUsedBytes = aff.usedBytes,
-                    ) as? LockEvaluator.Decision.Denied
-                } else {
-                    null
-                }
+            runningConfig?.let { config ->
+                LockEvaluator.evaluateServer(
+                    MmkvManager.decodeGroupLock(config.subscriptionId),
+                    MmkvManager.decodeServerAffiliationInfo(guid)
+                ) as? LockEvaluator.Decision.Denied
             }
         }
         if (denied != null) {
@@ -243,6 +229,9 @@ object CoreServiceManager {
     fun stopCoreLoop(): Boolean {
         connectionTestScope.coroutineContext.cancelChildren()
         groupUsageScope.coroutineContext.cancelChildren()
+        // A new connection attempt must start with a clean notice flag so the expiry and
+        // data-limit messages are shown again for the next session.
+        dataLimitNoticeShown = false
         val service = getService() ?: return false
 
         networkMonitor?.unregister()
@@ -366,7 +355,7 @@ object CoreServiceManager {
         // keeps no profile reference, so it never charges a profile here.
         val profileGuid = currentProfileGuid ?: return
         val aff = MmkvManager.decodeServerAffiliationInfo(profileGuid) ?: return
-        if (!aff.locked || aff.dataLimitBytes <= 0L) return
+        if ((!aff.locked && !aff.persistentLock) || aff.dataLimitBytes <= 0L) return
         val used = MmkvManager.addProfileUsedBytes(profileGuid, bytes)
         if (used >= aff.dataLimitBytes && !dataLimitNoticeShown) {
             dataLimitNoticeShown = true
@@ -386,28 +375,64 @@ object CoreServiceManager {
     }
 
     /**
-     * Starts the group-usage accumulator for the xray run modes. The notification speed
-     * loop already consumes the resetting core counters when the speed display is on, so
-     * this coroutine only runs when the speed display is off to avoid double counting.
+     * Starts the periodic lock enforcement loop for the xray run modes. The loop always
+     * runs so that expiry times are enforced even when a lock carries no data limit, and
+     * the stored usage counters are re-evaluated on every tick no matter who charged them.
+     *
+     * The notification speed loop already consumes the resetting core counters when the
+     * speed display is on, so this coroutine only charges from those counters when the
+     * speed display is off to avoid double counting; enforcement itself reads the stored
+     * usage, which the speed loop feeds through [accumulateGroupDataUsage].
      */
     private fun scheduleGroupUsageAccumulation() {
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) == true) return
         groupUsageScope.coroutineContext.cancelChildren()
         groupUsageScope.launch {
             while (true) {
                 delay(GROUP_USAGE_TICK_MS)
                 if (!isRunning()) return@launch
-                val groupId = currentConfig?.subscriptionId ?: continue
-                val lock = MmkvManager.decodeGroupLock(groupId)
-                val profileGuid = currentProfileGuid?.takeIf { currentConfig != null }
+                val service = getService() ?: continue
+                val config = currentConfig ?: continue
+                val group = MmkvManager.decodeGroupLock(config.subscriptionId)
+                val profileGuid = currentProfileGuid
                 val profile = profileGuid?.let { MmkvManager.decodeServerAffiliationInfo(it) }
-                val hasGroupLimit = lock.enabled && lock.dataLimitBytes > 0L
-                val hasProfileLimit = profile != null && profile.locked && profile.dataLimitBytes > 0L
-                if (!hasGroupLimit && !hasProfileLimit) continue
-                val total = queryAllOutboundTrafficStats()
-                    .filter { it.tag != AppConfig.TAG_DIRECT && it.tag != AppConfig.TAG_BLOCKED }
-                    .sumOf { it.value }
-                if (total > 0L) accumulateGroupDataUsage(total)
+                val groupActive = group.enabled &&
+                    (group.dataLimitBytes > 0L ||
+                        group.expiryEpochMinute != 0L ||
+                        group.expiryEpochDay != 0L)
+                val profileActive = profile != null &&
+                    (profile.locked || profile.persistentLock) &&
+                    (profile.dataLimitBytes > 0L || profile.expiryEpochMinute != 0L)
+                if (!groupActive && !profileActive) continue
+
+                if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) != true) {
+                    val total = queryAllOutboundTrafficStats()
+                        .filter { it.tag != AppConfig.TAG_DIRECT && it.tag != AppConfig.TAG_BLOCKED }
+                        .sumOf { it.value }
+                    if (total > 0L) accumulateGroupDataUsage(total)
+                }
+
+                // Re-evaluate stored expiry and usage every tick. This stops an already
+                // running session once its lock expires or its volume is consumed, even
+                // when the speed loop owns the counter reads or the lock has no volume.
+                val denial = profileGuid?.let { guid ->
+                    LockEvaluator.evaluateServer(group, profile) as? LockEvaluator.Decision.Denied
+                }
+                if (denial != null) {
+                    LogUtil.i(
+                        AppConfig.TAG,
+                        "StartCore-Manager: Running lock (${denial.scope}/${denial.reason}) denies session, stopping"
+                    )
+                    if (!dataLimitNoticeShown) {
+                        dataLimitNoticeShown = true
+                        MessageHelper.sendMsg2UI(
+                            service,
+                            AppConfig.MSG_STATE_LOCK_DENIED,
+                            LockDeniedMessage.resolve(service, denial.reason, denial.scope)
+                        )
+                    }
+                    MessageHelper.sendMsg2Service(service, AppConfig.MSG_STATE_STOP, "")
+                    return@launch
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.v2ray.ang.util
 
 import com.v2ray.ang.dto.entities.GroupLockConfig
+import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -200,5 +201,35 @@ object LockEvaluator {
             return Decision.Denied(DeniedReason.DATA_LIMIT_REACHED, DeniedScope.PROFILE)
         }
         return Decision.Allow
+    }
+
+    /**
+     * Evaluates the combined locks of a server profile: its subscription group first,
+     * then the profile's own lock. A permanently-locked profile (imported from a locked
+     * share) keeps denying even when its mutable [ServerAffiliationInfo.locked] flag is
+     * somehow cleared, because importing never offers an unlock path.
+     *
+     * @param groupLock The subscription-group lock, or null when the group has none.
+     * @param affiliation The server's affiliation info, or null when it has none.
+     * @param nowEpochMinute The current wall-clock minute.
+     */
+    fun evaluateServer(
+        groupLock: GroupLockConfig?,
+        affiliation: ServerAffiliationInfo?,
+        nowEpochMinute: Long = todayEpochMinute(),
+    ): Decision {
+        val groupDecision = evaluate(groupLock, nowEpochMinute = nowEpochMinute)
+        if (groupDecision is Decision.Denied) {
+            return groupDecision
+        }
+        val aff = affiliation ?: return Decision.Allow
+        if (!aff.locked && !aff.persistentLock) return Decision.Allow
+        return evaluateProfile(
+            locked = true,
+            expiryEpochMinute = aff.expiryEpochMinute,
+            dataLimitBytes = aff.dataLimitBytes,
+            nowEpochMinute = nowEpochMinute,
+            currentUsedBytes = aff.usedBytes,
+        )
     }
 }

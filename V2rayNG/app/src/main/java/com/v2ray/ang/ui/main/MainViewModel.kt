@@ -316,7 +316,8 @@ class MainViewModel(
                 guid = guid,
                 profile = profile.copy(),
                 testDelayMillis = affiliation?.testDelayMillis ?: 0L,
-                locked = affiliation?.locked ?: false,
+                locked = affiliation?.locked == true || affiliation?.persistentLock == true,
+                persistentLock = affiliation?.persistentLock == true,
             )
         }
 
@@ -575,16 +576,9 @@ class MainViewModel(
     fun lockDeniedReasonFor(guid: String?): LockEvaluator.Decision.Denied? {
         val currentGuid = guid ?: return null
         val profile = dataSource.decodeServerConfig(currentGuid) ?: return null
-        val groupDenied = LockEvaluator.evaluate(dataSource.decodeGroupLock(profile.subscriptionId))
-        if (groupDenied is LockEvaluator.Decision.Denied) {
-            return groupDenied
-        }
-        val aff = dataSource.decodeAffiliationInfo(currentGuid)
-        return LockEvaluator.evaluateProfile(
-            locked = aff?.locked == true,
-            expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
-            dataLimitBytes = aff?.dataLimitBytes ?: 0L,
-            currentUsedBytes = aff?.usedBytes ?: 0L,
+        return LockEvaluator.evaluateServer(
+            dataSource.decodeGroupLock(profile.subscriptionId),
+            dataSource.decodeAffiliationInfo(currentGuid)
         ) as? LockEvaluator.Decision.Denied
     }
 
@@ -604,6 +598,10 @@ class MainViewModel(
     }
 
     private fun toggleProfileLock(guid: String) {
+        if (dataSource.isProfilePermanentlyLocked(guid)) {
+            toastError(R.string.lock_profile_permanent_no_unlock)
+            return
+        }
         val locked = !dataSource.isProfileLocked(guid)
         dataSource.setProfileLocked(guid, locked)
         toastSuccess(if (locked) R.string.toast_profile_locked else R.string.toast_profile_unlocked)

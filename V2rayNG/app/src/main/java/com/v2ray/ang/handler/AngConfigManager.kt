@@ -493,7 +493,10 @@ object AngConfigManager {
             append = append,
         )
         lockedKeys.forEach { key ->
-            MmkvManager.encodeProfileLocked(key, true)
+            // Profiles imported from a locked share keep a permanent lock that the UI
+            // cannot unlock; the sharer's own lock stays editable on the originating
+            // device because it is never written through this import path.
+            MmkvManager.encodeProfileImportedLock(key)
         }
     }
 

@@ -167,6 +167,9 @@ AppConfig.MSG_STATE_STOP_SUCCESS -> MainServiceEvent.StateStopSuccess
 
     override fun isProfileLocked(guid: String): Boolean = MmkvManager.isProfileLocked(guid)
 
+    override fun isProfilePermanentlyLocked(guid: String): Boolean =
+        MmkvManager.isProfilePermanentlyLocked(guid)
+
     override fun setProfileLocked(guid: String, locked: Boolean) {
         MmkvManager.encodeProfileLocked(guid, locked)
     }

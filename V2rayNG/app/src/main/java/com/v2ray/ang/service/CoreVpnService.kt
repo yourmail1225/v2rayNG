@@ -82,31 +82,24 @@ class CoreVpnService : VpnService(), ServiceControl {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         NotificationManager.ensureForeground()
-        // A locked subscription group must not connect through any entry point, including
-        // the always-on restart path and the OpenVPN dispatch below.
+        // A locked subscription group or locked profile must not connect through any
+        // entry point, including the always-on restart path and the OpenVPN dispatch below.
         val mainGuid = MmkvManager.getSelectServer()
         val mainConfig = mainGuid?.let { MmkvManager.decodeServerConfig(it) }
-        val deniedReason = mainGuid?.let { guid ->
-            if (mainConfig?.subscriptionId != null) {
-                val groupDenied = LockEvaluator.evaluate(MmkvManager.decodeGroupLock(mainConfig.subscriptionId))
-                if (groupDenied is LockEvaluator.Decision.Denied) {
-                    return@let groupDenied
-                }
+        val denied = mainGuid?.let { guid ->
+            mainConfig?.let { config ->
+                LockEvaluator.evaluateServer(
+                    MmkvManager.decodeGroupLock(config.subscriptionId),
+                    MmkvManager.decodeServerAffiliationInfo(guid)
+                ) as? LockEvaluator.Decision.Denied
             }
-            val aff = MmkvManager.decodeServerAffiliationInfo(guid)
-            LockEvaluator.evaluateProfile(
-                locked = aff?.locked == true,
-                expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
-                dataLimitBytes = aff?.dataLimitBytes ?: 0L,
-                currentUsedBytes = aff?.usedBytes ?: 0L,
-            ) as? LockEvaluator.Decision.Denied
         }
-        if (deniedReason != null) {
+        if (denied != null) {
             LogUtil.i(AppConfig.TAG, "StartCore-VPN: Lock denies connection")
             MessageHelper.sendMsg2UI(
                 this,
                 AppConfig.MSG_STATE_LOCK_DENIED,
-                LockDeniedMessage.resolve(this, deniedReason.reason, deniedReason.scope)
+                LockDeniedMessage.resolve(this, denied.reason, denied.scope)
             )
             stopAllService()
             stopSelf()

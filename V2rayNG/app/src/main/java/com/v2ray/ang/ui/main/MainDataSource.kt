@@ -35,6 +35,7 @@ interface MainDataSource : Closeable {
     fun decodeAffiliationInfo(guid: String): ServerAffiliationInfo?
 
     fun isProfileLocked(guid: String): Boolean
+    fun isProfilePermanentlyLocked(guid: String): Boolean
     fun setProfileLocked(guid: String, locked: Boolean)
     fun setProfileLockConfig(guid: String, locked: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long)
     fun resetProfileUsedBytes(guid: String)

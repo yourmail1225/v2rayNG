@@ -513,6 +513,33 @@ object MmkvManager {
     }
 
     /**
+     * Returns whether the server profile holds a permanent lock imported from a
+     * locked share. Such a profile can never be unlocked in the UI.
+     *
+     * @param guid The server GUID.
+     * @return True when the profile is permanently locked.
+     */
+    fun isProfilePermanentlyLocked(guid: String): Boolean {
+        return decodeServerAffiliationInfo(guid)?.persistentLock == true
+    }
+
+    /**
+     * Marks a server profile as imported from a locked share: it stays locked in the
+     * UI and no unlock or lock-editing entry point is offered for it.
+     *
+     * @param guid The server GUID.
+     */
+    fun encodeProfileImportedLock(guid: String) {
+        if (guid.isBlank()) {
+            return
+        }
+        val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        aff.locked = true
+        aff.persistentLock = true
+        serverAffStorage.encode(guid, JsonUtil.toJson(aff))
+    }
+
+    /**
      * Sets the locked state of a server profile.
      *
      * @param guid The server GUID.

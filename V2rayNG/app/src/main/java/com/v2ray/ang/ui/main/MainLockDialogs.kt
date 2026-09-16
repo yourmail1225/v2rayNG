@@ -104,7 +104,12 @@ private fun LockEditorDialog(
 ) {
     var enabledState by rememberSaveable(editorKey) { mutableStateOf(enabled) }
     var expiryText by rememberSaveable(editorKey) {
-        mutableStateOf(LockEvaluator.formatEpochMinute(expiryEpochMinute))
+        mutableStateOf(
+            LockEvaluator.formatEpochMinute(
+                if (expiryEpochMinute != 0L) expiryEpochMinute
+                else LockEvaluator.todayEpochMinute() + DEFAULT_LOCK_MINUTES
+            )
+        )
     }
     var limitMbText by rememberSaveable(editorKey) {
         mutableStateOf((dataLimitBytes / MB).takeIf { it > 0L }?.toString().orEmpty())
