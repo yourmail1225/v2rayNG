@@ -1,6 +1,7 @@
 package com.v2ray.ang.util
 
 import com.v2ray.ang.dto.entities.GroupLockConfig
+import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -235,5 +236,61 @@ class LockEvaluatorTest {
             LockEvaluator.DeniedScope.GROUP,
             (denied as LockEvaluator.Decision.Denied).scope
         )
+    }
+
+    @Test
+    fun permanentLockedProfileWithExpiredExpiryIsDeniedAsProfile() {
+        val denied = LockEvaluator.evaluateServer(
+            groupLock = null,
+            affiliation = ServerAffiliationInfo(
+                locked = false,
+                persistentLock = true,
+                expiryEpochMinute = 10,
+            ),
+            nowEpochMinute = 11,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(
+            LockEvaluator.DeniedScope.PROFILE,
+            (denied as LockEvaluator.Decision.Denied).scope
+        )
+        assertEquals(
+            LockEvaluator.DeniedReason.EXPIRED,
+            (denied as LockEvaluator.Decision.Denied).reason
+        )
+    }
+
+    @Test
+    fun permanentLockedProfileWithoutConditionsIsAllowed() {
+        val decision = LockEvaluator.evaluateServer(
+            groupLock = null,
+            affiliation = ServerAffiliationInfo(locked = false, persistentLock = true),
+            nowEpochMinute = 999,
+        )
+        assertTrue(decision is LockEvaluator.Decision.Allow)
+    }
+
+    @Test
+    fun evaluateServerGroupDenialIsScopedToGroup() {
+        val denied = LockEvaluator.evaluateServer(
+            groupLock = GroupLockConfig(enabled = true, expiryEpochMinute = 1),
+            affiliation = ServerAffiliationInfo(locked = false),
+            nowEpochMinute = 2,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(
+            LockEvaluator.DeniedScope.GROUP,
+            (denied as LockEvaluator.Decision.Denied).scope
+        )
+    }
+
+    @Test
+    fun evaluateServerNullAffiliationWithCancelledGroupIsAllowed() {
+        val decision = LockEvaluator.evaluateServer(
+            groupLock = GroupLockConfig(enabled = false, expiryEpochMinute = 1),
+            affiliation = null,
+            nowEpochMinute = 999,
+        )
+        assertTrue(decision is LockEvaluator.Decision.Allow)
     }
 }

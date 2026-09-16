@@ -14,6 +14,7 @@ class ServerAffiliationInfoTest {
         assertTrue(info != null)
         assertEquals(120L, info!!.testDelayMillis)
         assertTrue(info.locked)
+        assertFalse(info.persistentLock)
         assertEquals(0L, info.expiryEpochMinute)
         assertEquals(0L, info.dataLimitBytes)
         assertEquals(0L, info.usedBytes)
