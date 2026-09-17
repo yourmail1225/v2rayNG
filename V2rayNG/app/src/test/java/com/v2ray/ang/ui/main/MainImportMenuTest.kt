@@ -57,13 +57,9 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedProfileMenuShowsLockedShareUnlockSettingsAndDeleteInOrder() {
+    fun lockedProfileMenuShowsOnlyUnlockAndDelete() {
         val expected = listOf(
-            ServerMenuAction.ShareLockedQRCode,
-            ServerMenuAction.ShareLockedClipboard,
-            ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
-            ServerMenuAction.LockSettings,
             ServerMenuAction.Delete,
         )
         assertEquals(
@@ -73,30 +69,22 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedComplexProfileMenuShowsLockedShareUnlockSettingsAndDeleteInOrder() {
-        val expected = listOf(
-            ServerMenuAction.ShareLockedQRCode,
-            ServerMenuAction.ShareLockedClipboard,
-            ServerMenuAction.ShareLockedFile,
-            ServerMenuAction.Unlock,
-            ServerMenuAction.LockSettings,
-            ServerMenuAction.Delete,
-        )
+    fun lockedComplexProfileMenuShowsOnlyUnlockAndDelete() {
         assertEquals(
-            expected,
+            listOf(
+                ServerMenuAction.Unlock,
+                ServerMenuAction.Delete,
+            ),
             serverMenuActions(isComplexProfile = true, includeManagementActions = true, isLocked = true)
         )
     }
 
     @Test
-    fun lockedProfileShareDialogShowsOnlyLockedShareActions() {
-        assertEquals(
-            listOf(
-                ServerMenuAction.ShareLockedQRCode,
-                ServerMenuAction.ShareLockedClipboard,
-                ServerMenuAction.ShareLockedFile,
-            ),
-            serverMenuActions(isComplexProfile = false, includeManagementActions = false, isLocked = true)
-        )
+    fun lockedProfileShareDialogExposesNoLockedShareActions() {
+        // A permanently locked profile exposes no lock-link/lock-file/lock-settings
+        // actions at all; a share-only dialog therefore has nothing to offer.
+        val actions = serverMenuActions(isComplexProfile = false, includeManagementActions = false, isLocked = true)
+        assertTrue(actions.none { it.isShareAction })
+        assertTrue(actions.isEmpty())
     }
 }
