@@ -70,14 +70,10 @@ internal fun serverMenuActions(
     isLocked: Boolean,
 ): List<ServerMenuAction> {
     val candidates = if (isLocked) {
-        // A locked profile can only be shared as a locked artifact, unlocked, its
-        // lock settings adjusted, or deleted; generic share and edit are removed.
+        // A permanently locked profile exposes no lock-link/lock-file/lock-settings
+        // actions and no generic share or edit; only unlock and delete remain.
         listOf(
-            ServerMenuAction.ShareLockedQRCode,
-            ServerMenuAction.ShareLockedClipboard,
-            ServerMenuAction.ShareLockedFile,
             ServerMenuAction.Unlock,
-            ServerMenuAction.LockSettings,
             ServerMenuAction.Delete
         )
     } else {
