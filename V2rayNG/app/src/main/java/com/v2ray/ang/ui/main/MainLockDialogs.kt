@@ -107,7 +107,7 @@ private fun LockEditorDialog(
         mutableStateOf(
             LockEvaluator.formatEpochMinute(
                 if (expiryEpochMinute != 0L) expiryEpochMinute
-                else LockEvaluator.todayEpochMinute() + DEFAULT_LOCK_MINUTES
+                else LockEvaluator.todayEpochMinute() + LockEvaluator.DEFAULT_LOCK_MINUTES
             )
         )
     }

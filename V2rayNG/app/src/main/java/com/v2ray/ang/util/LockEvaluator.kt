@@ -17,6 +17,8 @@ object LockEvaluator {
     private const val MINUTE_MILLIS = 60_000L
     private const val DAY_MINUTES = 1_440L
 
+    const val DEFAULT_LOCK_MINUTES = 1_440L
+
     enum class DeniedReason {
         EXPIRED,
         DATA_LIMIT_REACHED

@@ -592,6 +592,7 @@
     <string name="lock_profile_enable">Lock this profile</string>
     <string name="lock_profile_expired">Connection blocked: this profile\'s lock has expired.</string>
     <string name="lock_profile_data_exceeded">Connection blocked: this profile has reached its data limit.</string>
+    <string name="lock_profile_permanent_no_unlock">Connection blocked: this profile is permanently locked and cannot be unlocked.</string>
     <string name="action_save">Save</string>
     <string name="action_reset">Reset usage</string>
     <string name="toast_save_success">Saved</string>
