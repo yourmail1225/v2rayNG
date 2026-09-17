@@ -1,6 +1,7 @@
 package com.v2ray.ang.ui.main
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MainImportMenuTest {
