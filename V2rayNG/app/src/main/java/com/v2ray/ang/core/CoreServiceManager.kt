@@ -379,10 +379,15 @@ object CoreServiceManager {
      * runs so that expiry times are enforced even when a lock carries no data limit, and
      * the stored usage counters are re-evaluated on every tick no matter who charged them.
      *
-     * The notification speed loop already consumes the resetting core counters when the
-     * speed display is on, so this coroutine only charges from those counters when the
-     * speed display is off to avoid double counting; enforcement itself reads the stored
-     * usage, which the speed loop feeds through [accumulateGroupDataUsage].
+     * The notification speed loop consumes the resetting core counters while it lives,
+     * so this coroutine only charges from those counters when that loop is not running
+     * to avoid double counting; enforcement itself reads the stored usage, which the
+     * speed loop feeds through [accumulateGroupDataUsage].
+     *
+     * Gating on the live loop state (not the static speed setting) keeps exactly one
+     * consumer at all times: stopping the speed loop (screen off, session end) hands
+     * the counters back to this loop immediately, so a session never records traffic
+     * against the usage limit twice or loses the period between toggles.
      */
     private fun scheduleGroupUsageAccumulation() {
         groupUsageScope.coroutineContext.cancelChildren()
@@ -404,7 +409,12 @@ object CoreServiceManager {
                     (profile.dataLimitBytes > 0L || profile.expiryEpochMinute != 0L)
                 if (!groupActive && !profileActive) continue
 
-                if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) != true) {
+                // The speed loop is the sole counter consumer while it runs; otherwise
+                // this loop charges from the same resetting counters. Using the live job
+                // state (not the static speed setting) means a screen-off stop or a
+                // mid-session setting toggle hand ownership over without a lost or
+                // double count.
+                if (!NotificationManager.isSpeedNotificationRunning()) {
                     val total = queryAllOutboundTrafficStats()
                         .filter { it.tag != AppConfig.TAG_DIRECT && it.tag != AppConfig.TAG_BLOCKED }
                         .sumOf { it.value }

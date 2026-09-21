@@ -140,6 +140,15 @@ object NotificationManager {
     }
 
     /**
+     * Returns whether the speed loop is currently the active consumer of the
+     * resetting core traffic counters. The usage-charge loop must not touch those
+     * counters while this loop is running, or the deltas get split and double
+     * counted; use this live state instead of the static speed setting so a screen
+     * display toggle never pauses or races the data-limit accounting.
+     */
+    fun isSpeedNotificationRunning(): Boolean = speedNotificationJob != null
+
+    /**
      * Stops the speed notification.
      */
     fun stopSpeedNotification() {
