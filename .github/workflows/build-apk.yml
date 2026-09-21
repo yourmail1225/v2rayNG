@@ -124,6 +124,12 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:testFdroidDebugUnitTest --no-daemon
 
+      - name: Validate Play Store debug variant
+        working-directory: V2rayNG
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testPlaystoreDebugUnitTest :app:compilePlaystoreDebugKotlin :app:assemblePlaystoreDebug --no-daemon
+
       - name: Verify native libraries inside APK
         run: |
           set -euo pipefail
