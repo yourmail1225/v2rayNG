@@ -19,6 +19,7 @@ class ServerAffiliationInfoTest {
         assertEquals(0L, info.expiryEpochMinute)
         assertEquals(0L, info.dataLimitBytes)
         assertEquals(0L, info.usedBytes)
+        assertEquals(0L, info.startEpochMinute)
     }
 
     @Test
@@ -29,6 +30,7 @@ class ServerAffiliationInfoTest {
             expiryEpochMinute = 29_146_230L,
             dataLimitBytes = 1_048_576,
             usedBytes = 524_288,
+            startEpochMinute = 29_100_000L,
         )
         val parsed = JsonUtil.fromJsonSafe(JsonUtil.toJson(info), ServerAffiliationInfo::class.java)
 
@@ -38,5 +40,6 @@ class ServerAffiliationInfoTest {
         assertEquals(29_146_230L, parsed.expiryEpochMinute)
         assertEquals(1_048_576L, parsed.dataLimitBytes)
         assertEquals(524_288L, parsed.usedBytes)
+        assertEquals(29_100_000L, parsed.startEpochMinute)
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +57,7 @@ import com.v2ray.ang.ui.compose.colorConfigType
 import com.v2ray.ang.ui.compose.colorPing
 import com.v2ray.ang.ui.compose.colorPingRed
 import com.v2ray.ang.ui.compose.verticalScrollbar
+import com.v2ray.ang.util.LockEvaluator
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -443,8 +445,89 @@ private fun ServerListItem(
                 Text(row.typeDescription, style = MaterialTheme.typography.bodySmall, color = colorConfigType, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(testResult, style = MaterialTheme.typography.bodySmall, color = if (row.testDelayMillis < 0L) colorPingRed else colorPing, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            LockUsageBars(usage = row.usage)
         }
     }
+}
+
+/**
+ * Renders the two quota bars of a locked profile card: the consumed data share and
+ * the remaining lock window. Both share the Material 3 secondary color already used
+ * for the loading indicators, in single- and double-column layouts alike.
+ */
+@Composable
+private fun LockUsageBars(usage: LockUsageUiModel) {
+    if (!usage.isActive) return
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        if (usage.hasDataLimit) {
+            QuotaBar(
+                label = stringResource(R.string.profile_usage_data_label),
+                value = stringResource(
+                    R.string.profile_usage_data_value,
+                    mbString(usage.usedBytes),
+                    mbString(usage.dataLimitBytes)
+                ),
+                progress = dataUsageFraction(usage.usedBytes, usage.dataLimitBytes) ?: 0f,
+            )
+        }
+        if (usage.hasTimeLimit) {
+            QuotaBar(
+                label = stringResource(R.string.profile_usage_time_label),
+                value = stringResource(
+                    R.string.profile_usage_time_value,
+                    LockEvaluator.formatEpochMinute(usage.expiryEpochMinute)
+                ),
+                progress = timeRemainingFraction(
+                    usage.startEpochMinute,
+                    usage.expiryEpochMinute,
+                    usage.nowEpochMinute,
+                ) ?: 0f,
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuotaBar(label: String, value: String, progress: Float) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                label,
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
+        )
+    }
+}
+
+private const val MEGABYTE = 1_048_576L
+
+private fun mbString(bytes: Long): String {
+    val value = bytes / MEGABYTE
+    return if (value > 0L) value.toString() else "0"
 }
 
 internal suspend fun PagerState.navigateToPageOptimized(

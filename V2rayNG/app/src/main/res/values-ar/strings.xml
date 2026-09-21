@@ -600,6 +600,10 @@
     <string name="lock_profile_enable">قفل هذا الخادم</string>
     <string name="lock_profile_expired">تم حظر الاتصال: انتهى قفل هذا الخادم</string>
     <string name="lock_profile_data_exceeded">تم حظر الاتصال: وصل هذا الخادم إلى حد البيانات</string>
+    <string name="profile_usage_data_label">حد البيانات</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">ينتهي في</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">حفظ</string>
     <string name="action_reset">إعادة تعيين الاستخدام</string>
     <string name="toast_save_success">تم الحفظ</string>

@@ -590,6 +590,10 @@
     <string name="lock_profile_enable">Khóa máy chủ này</string>
     <string name="lock_profile_expired">Kết nối bị chặn: khóa của máy chủ này đã hết hạn</string>
     <string name="lock_profile_data_exceeded">Kết nối bị chặn: máy chủ này đã đạt giới hạn dữ liệu</string>
+    <string name="profile_usage_data_label">Giới hạn dữ liệu</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">Hết hạn</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">Lưu</string>
     <string name="action_reset">Đặt lại mức sử dụng</string>
     <string name="toast_save_success">Đã lưu</string>

@@ -27,6 +27,7 @@ import com.v2ray.ang.dto.entities.SubscriptionCache
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.dto.entities.WebDavConfig
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LockEvaluator
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -558,6 +559,10 @@ object MmkvManager {
      * Sets the lock configuration of a server profile, preserving the test delay
      * and already consumed bytes.
      *
+     * When the expiry moment changes or is first set, the accounting window for the
+     * card's remaining-time indicator restarts at the current minute; saving the same
+     * expiry again keeps the original start so elapsed time keeps flowing.
+     *
      * @param guid The server GUID.
      */
     fun encodeProfileLockConfig(guid: String, locked: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) {
@@ -565,6 +570,9 @@ object MmkvManager {
             return
         }
         val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        if (expiryEpochMinute != 0L && expiryEpochMinute != aff.expiryEpochMinute) {
+            aff.startEpochMinute = LockEvaluator.todayEpochMinute()
+        }
         aff.locked = locked
         aff.expiryEpochMinute = expiryEpochMinute
         aff.dataLimitBytes = dataLimitBytes

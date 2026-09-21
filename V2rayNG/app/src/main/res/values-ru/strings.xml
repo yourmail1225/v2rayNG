@@ -596,6 +596,10 @@
     <string name="lock_profile_enable">Заблокировать этот сервер</string>
     <string name="lock_profile_expired">Соединение заблокировано: срок действия блокировки этого сервера истёк</string>
     <string name="lock_profile_data_exceeded">Соединение заблокировано: этим сервером достигнут лимит данных</string>
+    <string name="profile_usage_data_label">Лимит данных</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">Истекает</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">Сохранить</string>
     <string name="action_reset">Сбросить расход</string>
     <string name="toast_save_success">Сохранено</string>

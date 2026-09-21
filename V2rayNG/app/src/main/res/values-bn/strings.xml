@@ -592,6 +592,10 @@
     <string name="lock_profile_enable">এই সার্ভারটি লক করুন</string>
     <string name="lock_profile_expired">সংযোগ ব্লক হয়েছে: এই সার্ভারের লকের মেয়াদ শেষ হয়েছে</string>
     <string name="lock_profile_data_exceeded">সংযোগ ব্লক হয়েছে: এই সার্ভার ডেটা সীমায় পৌঁছেছে</string>
+    <string name="profile_usage_data_label">ডেটা সীমা</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">মেয়াদ শেষ</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">সংরক্ষণ</string>
     <string name="action_reset">ব্যবহার রিসেট করুন</string>
     <string name="toast_save_success">সংরক্ষিত হয়েছে</string>

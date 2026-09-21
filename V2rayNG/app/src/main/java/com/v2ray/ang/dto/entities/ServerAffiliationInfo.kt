@@ -7,4 +7,5 @@ data class ServerAffiliationInfo(
     var expiryEpochMinute: Long = 0L,
     var dataLimitBytes: Long = 0L,
     var usedBytes: Long = 0L,
+    var startEpochMinute: Long = 0L,
 )

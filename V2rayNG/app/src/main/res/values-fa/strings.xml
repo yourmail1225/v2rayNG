@@ -592,6 +592,10 @@
     <string name="lock_profile_enable">قفل کردن این پروفایل</string>
     <string name="lock_profile_expired">اتصال مسدود شد: قفل این سرور به پایان رسیده است</string>
     <string name="lock_profile_data_exceeded">اتصال مسدود شد: سهمیه مصرف این سرور به پایان رسیده است</string>
+    <string name="profile_usage_data_label">سقف حجم</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">انقضا</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">ذخیره</string>
     <string name="action_reset">بازنشانی مصرف</string>
     <string name="toast_save_success">ذخیره شد</string>

@@ -590,6 +590,10 @@
     <string name="lock_profile_enable">锁定此服务器</string>
     <string name="lock_profile_expired">连接被阻止：此服务器的锁定已到期</string>
     <string name="lock_profile_data_exceeded">连接被阻止：此服务器已达到数据限额</string>
+    <string name="profile_usage_data_label">数据限额</string>
+    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_time_label">到期时间</string>
+    <string name="profile_usage_time_value">%1$s</string>
     <string name="action_save">保存</string>
     <string name="action_reset">重置用量</string>
     <string name="toast_save_success">已保存</string>
