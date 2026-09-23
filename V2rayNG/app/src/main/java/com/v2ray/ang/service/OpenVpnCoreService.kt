@@ -502,11 +502,15 @@ class OpenVpnCoreService : VpnService(), OpenVpnCoreBridge {
         if (lastBytesIn >= 0L && lastBytesOut >= 0L) {
             val deltaIn = bytesIn.coerceAtLeast(0L) - lastBytesIn.coerceAtLeast(0L)
             val deltaOut = bytesOut.coerceAtLeast(0L) - lastBytesOut.coerceAtLeast(0L)
-            val groupId = MmkvManager.getSelectServer()
+            // The selected profile is the config driving this session for app-initiated
+            // starts, so charge its profile lock (data limit) alongside the group lock.
+            val profileGuid = MmkvManager.getSelectServer()
+            val groupId = profileGuid
                 ?.let { MmkvManager.decodeServerConfig(it)?.subscriptionId }
             CoreServiceManager.accumulateGroupDataUsage(
                 (deltaIn + deltaOut).coerceAtLeast(0L),
-                groupId
+                groupId,
+                profileGuid
             )
         }
         lastBytesIn = bytesIn

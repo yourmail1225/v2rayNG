@@ -322,13 +322,15 @@ object CoreServiceManager {
     }
 
     /**
-     * Consumes [bytes] against the running group's lock and, when the data limit is
-     * reached, notifies the UI and stops the session.
+     * Consumes [bytes] against the running group's lock and the running profile's lock,
+     * and, when either data limit is reached, notifies the UI and stops the session.
      *
      * @param subscriptionId The group to charge, or null to use the running config's group.
      *                       Passed explicitly by the OpenVPN engine which keeps no [currentConfig].
+     * @param profileGuid The profile to charge, or null to use the running xray profile.
+     *                    Passed by the OpenVPN engine, which keeps no [currentProfileGuid].
      */
-    fun accumulateGroupDataUsage(bytes: Long, subscriptionId: String? = null) {
+    fun accumulateGroupDataUsage(bytes: Long, subscriptionId: String? = null, profileGuid: String? = null) {
         if (bytes <= 0L) return
         val groupId = subscriptionId ?: currentConfig?.subscriptionId ?: return
         val lock = MmkvManager.decodeGroupLock(groupId)
@@ -350,13 +352,13 @@ object CoreServiceManager {
                 MessageHelper.sendMsg2Service(service, AppConfig.MSG_STATE_STOP, "")
             }
         }
-        // Profile locks are only charged for the xray run modes, which track the
-        // selected profile GUID. The OpenVPN engine passes an explicit group id and
-        // keeps no profile reference, so it never charges a profile here.
-        val profileGuid = currentProfileGuid ?: return
-        val aff = MmkvManager.decodeServerAffiliationInfo(profileGuid) ?: return
+        // Profile locks are charged for the xray run modes, which track the selected
+        // profile GUID, and for OpenVPN sessions, which pass the selected profile's GUID
+        // explicitly because they keep no [currentConfig].
+        val pg = profileGuid ?: currentProfileGuid ?: return
+        val aff = MmkvManager.decodeServerAffiliationInfo(pg) ?: return
         if ((!aff.locked && !aff.persistentLock) || aff.dataLimitBytes <= 0L) return
-        val used = MmkvManager.addProfileUsedBytes(profileGuid, bytes)
+        val used = MmkvManager.addProfileUsedBytes(pg, bytes)
         if (used >= aff.dataLimitBytes && !dataLimitNoticeShown) {
             dataLimitNoticeShown = true
             val service = getService() ?: return
