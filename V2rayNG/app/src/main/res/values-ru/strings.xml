@@ -599,7 +599,12 @@
     <string name="profile_usage_data_label">Лимит данных</string>
     <string name="profile_usage_data_value">%1$s / %2$s MB</string>
     <string name="profile_usage_time_label">Истекает</string>
-    <string name="profile_usage_time_value">%1$s</string>
+    <plurals name="profile_usage_days_remaining">
+        <item quantity="one">остался %1$d день</item>
+        <item quantity="few">осталось %1$d дня</item>
+        <item quantity="many">осталось %1$d дней</item>
+        <item quantity="other">осталось %1$d дней</item>
+    </plurals>
     <string name="action_save">Сохранить</string>
     <string name="action_reset">Сбросить расход</string>
     <string name="toast_save_success">Сохранено</string>

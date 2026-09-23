@@ -595,7 +595,10 @@
     <string name="profile_usage_data_label">Data limit</string>
     <string name="profile_usage_data_value">%1$s / %2$s MB</string>
     <string name="profile_usage_time_label">Expires</string>
-    <string name="profile_usage_time_value">%1$s</string>
+    <plurals name="profile_usage_days_remaining">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
     <string name="lock_profile_permanent_no_unlock">Connection blocked: this profile is permanently locked and cannot be unlocked.</string>
     <string name="action_save">Save</string>
     <string name="action_reset">Reset usage</string>

@@ -593,7 +593,9 @@
     <string name="profile_usage_data_label">資料上限</string>
     <string name="profile_usage_data_value">%1$s / %2$s MB</string>
     <string name="profile_usage_time_label">到期時間</string>
-    <string name="profile_usage_time_value">%1$s</string>
+    <plurals name="profile_usage_days_remaining">
+        <item quantity="other">剩餘 %1$d 天</item>
+    </plurals>
     <string name="action_save">儲存</string>
     <string name="action_reset">重設用量</string>
     <string name="toast_save_success">已儲存</string>

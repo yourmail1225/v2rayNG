@@ -116,4 +116,29 @@ class MainServerRowModelsTest {
         )
         assertTrue(buildLockUsage(aff).hasDataLimit)
     }
+
+    @Test
+    fun remainingDaysIsZeroWithoutExpiry() {
+        assertEquals(0L, remainingDays(expiryEpochMinute = 0L, nowEpochMinute = 100L))
+    }
+
+    @Test
+    fun remainingDaysIsZeroAtAndAfterExpiry() {
+        assertEquals(0L, remainingDays(expiryEpochMinute = 100L, nowEpochMinute = 100L))
+        assertEquals(0L, remainingDays(expiryEpochMinute = 100L, nowEpochMinute = 200L))
+    }
+
+    @Test
+    fun remainingDaysRoundsUpPartialDays() {
+        assertEquals(1L, remainingDays(expiryEpochMinute = 100L, nowEpochMinute = 1L))
+        assertEquals(1L, remainingDays(expiryEpochMinute = 101L, nowEpochMinute = 100L))
+        assertEquals(1L, remainingDays(expiryEpochMinute = 1540L, nowEpochMinute = 100L))
+        assertEquals(2L, remainingDays(expiryEpochMinute = 1541L, nowEpochMinute = 100L))
+    }
+
+    @Test
+    fun remainingDaysIsExactForWholeDayWindows() {
+        assertEquals(1L, remainingDays(expiryEpochMinute = 1540L, nowEpochMinute = 100L))
+        assertEquals(2L, remainingDays(expiryEpochMinute = 2980L, nowEpochMinute = 100L))
+    }
 }

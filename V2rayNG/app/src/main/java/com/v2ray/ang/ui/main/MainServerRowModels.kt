@@ -66,6 +66,17 @@ internal fun timeRemainingFraction(
     return remaining.toFloat() / total.toFloat()
 }
 
+/**
+ * Whole days remaining until [expiryEpochMinute] seen at [nowEpochMinute], rounded up,
+ * or 0 when there is no valid expiry or the window has already ended. Both values are
+ * epoch minutes, so one day is 1440 units.
+ */
+internal fun remainingDays(expiryEpochMinute: Long, nowEpochMinute: Long): Long {
+    if (expiryEpochMinute <= 0L || nowEpochMinute <= 0L) return 0L
+    if (nowEpochMinute >= expiryEpochMinute) return 0L
+    return (expiryEpochMinute - nowEpochMinute + 1439L) / 1440L
+}
+
 internal fun buildServerRowUiModel(
     server: ServersCache,
     subscriptionRemarks: String,

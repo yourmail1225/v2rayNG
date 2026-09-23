@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -57,7 +58,6 @@ import com.v2ray.ang.ui.compose.colorConfigType
 import com.v2ray.ang.ui.compose.colorPing
 import com.v2ray.ang.ui.compose.colorPingRed
 import com.v2ray.ang.ui.compose.verticalScrollbar
-import com.v2ray.ang.util.LockEvaluator
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -476,11 +476,13 @@ private fun LockUsageBars(usage: LockUsageUiModel) {
             )
         }
         if (usage.hasTimeLimit) {
+            val remaining = remainingDays(usage.expiryEpochMinute, usage.nowEpochMinute)
             QuotaBar(
                 label = stringResource(R.string.profile_usage_time_label),
-                value = stringResource(
-                    R.string.profile_usage_time_value,
-                    LockEvaluator.formatEpochMinute(usage.expiryEpochMinute)
+                value = pluralStringResource(
+                    R.plurals.profile_usage_days_remaining,
+                    remaining.toInt(),
+                    remaining.toInt()
                 ),
                 progress = timeRemainingFraction(
                     usage.startEpochMinute,

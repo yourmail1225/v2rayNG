@@ -603,7 +603,14 @@
     <string name="profile_usage_data_label">حد البيانات</string>
     <string name="profile_usage_data_value">%1$s / %2$s MB</string>
     <string name="profile_usage_time_label">ينتهي في</string>
-    <string name="profile_usage_time_value">%1$s</string>
+    <plurals name="profile_usage_days_remaining">
+        <item quantity="zero">متبقي %1$d يوم</item>
+        <item quantity="one">بقي %1$d يوم</item>
+        <item quantity="two">بقي %1$d يومان</item>
+        <item quantity="few">بقي %1$d أيام</item>
+        <item quantity="many">بقي %1$d يومًا</item>
+        <item quantity="other">متبقي %1$d يومًا</item>
+    </plurals>
     <string name="action_save">حفظ</string>
     <string name="action_reset">إعادة تعيين الاستخدام</string>
     <string name="toast_save_success">تم الحفظ</string>
