@@ -88,3 +88,10 @@ jobs:
         echo "sdk.dir=${ANDROID_HOME}" > local.properties
         chmod 755 gradlew
         ./gradlew :app:testPlaystoreDebugUnitTest :app:assemblePlaystoreDebug
+
+    - name: Upload Play Store debug APK
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: playstore-debug-apk
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/debug/*.apk
