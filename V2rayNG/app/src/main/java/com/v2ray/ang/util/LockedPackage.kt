@@ -1,6 +1,8 @@
 package com.v2ray.ang.util
 
-import com.v2ray.ang.util.JsonUtil
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 
 /**
  * Serialization for locked-profile packages.
@@ -53,18 +55,43 @@ object LockedPackage {
     }
 
     /**
-     * Reads a locked-package payload. Packages written by older releases stored a plain
-     * array of config strings; current releases store an array of entry objects that also
-     * carry the lock conditions. Both layouts parse here.
+     * Reads a locked-package payload. Older releases stored a plain array of config strings;
+     * current releases store an array of entry objects that also carry the lock conditions.
+     * The layout is detected from parsed JSON without logging, because a block that is absent,
+     * legacy-layout, or not JSON at all is the ordinary "pass it through as surrounding text"
+     * case rather than a fault, and plain JVM unit tests have no android.util.Log to report to.
      */
     private fun parseEntries(json: String): List<LockedEntry> {
-        JsonUtil.fromJsonSafe(json, Array<LockedEntry>::class.java)
-            ?.filter { it.content.isNotBlank() }
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { return it.toList() }
-        return JsonUtil.fromJsonSafe(json, Array<String>::class.java)
-            ?.filter { it.isNotBlank() }
-            ?.map { LockedEntry(it) }
-            ?: emptyList()
+        if (json.isBlank()) return emptyList()
+        return try {
+            parseEntries(JsonParser.parseString(json).asJsonArray)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
+
+    private fun parseEntries(array: JsonArray): List<LockedEntry> =
+        if (array.any { it.isJsonObject }) {
+            array.mapNotNull { element ->
+                if (!element.isJsonObject) return@mapNotNull null
+                val obj = element.asJsonObject
+                val content = obj.lockString("content")
+                if (content.isBlank()) null else LockedEntry(
+                    content,
+                    expiryEpochMinute = obj.lockLong("expiryEpochMinute"),
+                    dataLimitBytes = obj.lockLong("dataLimitBytes"),
+                )
+            }
+        } else {
+            array.mapNotNull { element ->
+                val content = element.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+                if (content.isBlank()) null else LockedEntry(content)
+            }
+        }
+
+    private fun JsonObject.lockString(name: String): String =
+        get(name)?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+
+    private fun JsonObject.lockLong(name: String): Long =
+        get(name)?.takeIf { it.isJsonPrimitive }?.asLong ?: 0L
 }
