@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.main
 
+import com.v2ray.ang.dto.entities.GroupLockConfig
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import com.v2ray.ang.dto.entities.ServersCache
@@ -81,8 +82,15 @@ internal fun buildServerRowUiModel(
     server: ServersCache,
     subscriptionRemarks: String,
     affiliation: ServerAffiliationInfo?,
+    groupLock: GroupLockConfig? = null,
 ): ServerRowUiModel {
     val profile = server.profile
+    // A profile in a group with an active lock is treated exactly like a locked
+    // profile: no edit, share, or unlock in the UI. The card renders the group-wide
+    // quota, which is accounted against a single shared counter for the whole group,
+    // unless the profile carries its own more-specific lock.
+    val groupLocked = groupLock?.enabled == true
+    val profileLockActive = affiliation?.locked == true || affiliation?.persistentLock == true
     return ServerRowUiModel(
         guid = server.guid,
         profile = profile,
@@ -92,8 +100,12 @@ internal fun buildServerRowUiModel(
         typeDescription = serverProtocolDescription(profile),
         testDelayMillis = server.testDelayMillis,
         subscriptionBadge = subscriptionRemarks.firstOrNull()?.toString().orEmpty(),
-        locked = server.locked,
-        usage = buildLockUsage(affiliation),
+        locked = server.locked || groupLocked,
+        usage = if (groupLocked && !profileLockActive) {
+            buildGroupLockUsage(groupLock)
+        } else {
+            buildLockUsage(affiliation)
+        },
     )
 }
 
@@ -107,6 +119,23 @@ internal fun buildLockUsage(affiliation: ServerAffiliationInfo?): LockUsageUiMod
         dataLimitBytes = aff.dataLimitBytes,
         expiryEpochMinute = aff.expiryEpochMinute,
         startEpochMinute = aff.startEpochMinute,
+        nowEpochMinute = LockEvaluator.todayEpochMinute(),
+    )
+}
+
+/**
+ * Snapshot of a subscription group's lock quota for a card's progress bars. The
+ * group accounts usage against one shared counter, so every profile in the group
+ * renders the same combined values rather than per-profile copies.
+ */
+internal fun buildGroupLockUsage(groupLock: GroupLockConfig?): LockUsageUiModel {
+    val lock = groupLock ?: return LockUsageUiModel()
+    if (!lock.enabled) return LockUsageUiModel()
+    return LockUsageUiModel(
+        usedBytes = lock.usedBytes,
+        dataLimitBytes = lock.dataLimitBytes,
+        expiryEpochMinute = lock.expiryEpochMinute,
+        startEpochMinute = lock.startEpochMinute,
         nowEpochMinute = LockEvaluator.todayEpochMinute(),
     )
 }

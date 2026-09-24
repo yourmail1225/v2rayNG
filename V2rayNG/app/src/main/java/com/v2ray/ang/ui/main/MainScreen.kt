@@ -165,13 +165,25 @@ fun MainScreen(
                 )
             },
             onReset = { onAction(MainAction.ResetProfileUsedBytes(editor.guid)) },
-            onShareLink = {
+            onShareLink = { expiryEpochMinute, dataLimitBytes ->
                 onAction(MainAction.DismissProfileLockEditor)
-                onAction(MainAction.ShareLockedClipboard(editor.guid))
+                onAction(
+                    MainAction.ShareLockedClipboard(
+                        guid = editor.guid,
+                        expiryEpochMinute = expiryEpochMinute,
+                        dataLimitBytes = dataLimitBytes,
+                    )
+                )
             },
-            onShareQRCode = {
+            onShareQRCode = { expiryEpochMinute, dataLimitBytes ->
                 onAction(MainAction.DismissProfileLockEditor)
-                onAction(MainAction.ShareLockedQRCode(editor.guid))
+                onAction(
+                    MainAction.ShareLockedQRCode(
+                        guid = editor.guid,
+                        expiryEpochMinute = expiryEpochMinute,
+                        dataLimitBytes = dataLimitBytes,
+                    )
+                )
             },
         )
     }

@@ -37,6 +37,8 @@ object AngConfigManager {
         val profile: ProfileItem,
         val rawConfig: String? = null,
         val locked: Boolean = false,
+        val expiryEpochMinute: Long = 0L,
+        val dataLimitBytes: Long = 0L,
     )
 
     // Parser mapping for different config types (lazy initialized)
@@ -136,11 +138,12 @@ object AngConfigManager {
     fun shareFullContent2Clipboard(context: Context, guid: String?): Int {
         try {
             if (guid == null) return -1
+            val config = MmkvManager.decodeServerConfig(guid) ?: return -1
             if (MmkvManager.isProfileLocked(guid)) return -1
-            val config = MmkvManager.decodeServerConfig(guid)
+            if (MmkvManager.decodeGroupLock(config.subscriptionId).enabled) return -1
             // An OpenVPN profile shares its raw .ovpn content; the v2ray config builder
             // does not understand it.
-            if (config?.configType == EConfigType.OPENVPN) {
+            if (config.configType == EConfigType.OPENVPN) {
                 val raw = MmkvManager.decodeServerRaw(guid)
                 if (raw.isNullOrEmpty()) return -1
                 Utils.setClipboard(context, raw)
@@ -167,6 +170,12 @@ object AngConfigManager {
      */
     private fun shareConfig(guid: String): String {
         if (MmkvManager.isProfileLocked(guid)) {
+            return ""
+        }
+        val config = MmkvManager.decodeServerConfig(guid)
+        // A config in a group with an active lock cannot be exported through the
+        // generic share paths; it is only movable as a locked package.
+        if (config != null && MmkvManager.decodeGroupLock(config.subscriptionId).enabled) {
             return ""
         }
         return shareConfigContent(guid)
@@ -217,7 +226,13 @@ object AngConfigManager {
                 val lockedParsed = LockedPackage.parse(server)
                 if (lockedParsed.entries.isNotEmpty()) {
                     lockedCount = lockedParsed.entries.sumOf { entry ->
-                        importLockedConfigContent(entry.content, subid, append)
+                        importLockedConfigContent(
+                            content = entry.content,
+                            subid = subid,
+                            append = append,
+                            expiryEpochMinute = entry.expiryEpochMinute,
+                            dataLimitBytes = entry.dataLimitBytes,
+                        )
                     }
                     importText = lockedParsed.remaining
                 }
@@ -264,12 +279,23 @@ object AngConfigManager {
     /**
      * Imports a single locked-package entry with the lock state preserved.
      *
+     * The entry's lock conditions (expiry moment and data limit) are stamped on the
+     * imported profiles so the recipient inherits the sharer's lock settings.
+     *
      * @param content The config text (a shared URI line or a full OpenVPN file).
      * @param subid The subscription ID.
      * @param append Whether to append the configuration.
+     * @param expiryEpochMinute The lock expiry wall-clock minute to apply, 0 for none.
+     * @param dataLimitBytes The lock data-volume limit to apply, 0 for none.
      * @return The number of profiles imported.
      */
-    private fun importLockedConfigContent(content: String, subid: String, append: Boolean): Int {
+    private fun importLockedConfigContent(
+        content: String,
+        subid: String,
+        append: Boolean,
+        expiryEpochMinute: Long = 0L,
+        dataLimitBytes: Long = 0L,
+    ): Int {
         if (content.isOpenVpnConfig()) {
             val profile = ProfileItem(
                 configType = EConfigType.OPENVPN,
@@ -277,24 +303,35 @@ object AngConfigManager {
                 remarks = "OpenVPN",
             )
             commitProfiles(
-                configs = listOf(ParsedProfile(profile = profile, rawConfig = content, locked = true)),
+                configs = listOf(
+                    ParsedProfile(
+                        profile = profile,
+                        rawConfig = content,
+                        locked = true,
+                        expiryEpochMinute = expiryEpochMinute,
+                        dataLimitBytes = dataLimitBytes,
+                    )
+                ),
                 subid = subid,
                 append = append,
             )
             return 1
         }
-        var count = parseBatchConfig(Utils.decode(content), subid, append, locked = true)
+        var count = parseBatchConfig(Utils.decode(content), subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
         if (count <= 0) {
-            count = parseBatchConfig(content, subid, append, locked = true)
+            count = parseBatchConfig(content, subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
         }
         if (count <= 0) {
-            count = parseCustomConfigServer(content, subid, append, locked = true)
+            count = parseCustomConfigServer(content, subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
         }
         return count
     }
 
     /**
      * Exports every locked profile in [serverList] as a locked package.
+     *
+     * Each entry carries the lock conditions (expiry moment and data limit) currently
+     * applied on the originating profile, so a batch export preserves them too.
      *
      * @param serverList The list of server GUIDs.
      * @return The encoded locked package text, or an empty string when nothing is locked.
@@ -304,7 +341,12 @@ object AngConfigManager {
             if (!MmkvManager.isProfileLocked(guid)) return@mapNotNull null
             val content = shareConfigContent(guid)
             if (content.isBlank()) return@mapNotNull null
-            LockedPackage.LockedEntry(content)
+            val aff = MmkvManager.decodeServerAffiliationInfo(guid)
+            LockedPackage.LockedEntry(
+                content = content,
+                expiryEpochMinute = aff?.expiryEpochMinute ?: 0L,
+                dataLimitBytes = aff?.dataLimitBytes ?: 0L,
+            )
         }
         return LockedPackage.encode(entries)
     }
@@ -314,11 +356,33 @@ object AngConfigManager {
      * profile is missing or has no shareable content. The payload stays
      * exportable-but-locked: importing it re-imports the profile with a permanent lock
      * that the recipient cannot unlock, no matter the lock state on this device.
+     *
+     * The lock conditions applied on the profile are embedded in the package unless the
+     * caller overrides them, so the recipient inherits the same expiry and data limit.
+     *
+     * @param guid The GUID of the configuration.
+     * @param expiryEpochMinuteOverride The expiry wall-clock minute to ship, or null to
+     *                                  use the profile's stored value.
+     * @param dataLimitBytesOverride The data-volume limit to ship, or null to use the
+     *                               profile's stored value.
      */
-    fun shareLockedConfig(guid: String): String {
+    fun shareLockedConfig(
+        guid: String,
+        expiryEpochMinuteOverride: Long? = null,
+        dataLimitBytesOverride: Long? = null,
+    ): String {
         val content = shareConfigContent(guid)
         if (content.isBlank()) return ""
-        return LockedPackage.encode(listOf(LockedPackage.LockedEntry(content)))
+        val aff = MmkvManager.decodeServerAffiliationInfo(guid)
+        return LockedPackage.encode(
+            listOf(
+                LockedPackage.LockedEntry(
+                    content = content,
+                    expiryEpochMinute = expiryEpochMinuteOverride ?: (aff?.expiryEpochMinute ?: 0L),
+                    dataLimitBytes = dataLimitBytesOverride ?: (aff?.dataLimitBytes ?: 0L),
+                )
+            )
+        )
     }
 
     /**
@@ -326,11 +390,20 @@ object AngConfigManager {
      *
      * @param context The context.
      * @param guid The GUID of the configuration.
+     * @param expiryEpochMinuteOverride The expiry wall-clock minute to ship, or null to
+     *                                  use the profile's stored value.
+     * @param dataLimitBytesOverride The data-volume limit to ship, or null to use the
+     *                               profile's stored value.
      * @return The result code; 0 on success.
      */
-    fun shareLocked2Clipboard(context: Context, guid: String): Int {
+    fun shareLocked2Clipboard(
+        context: Context,
+        guid: String,
+        expiryEpochMinuteOverride: Long? = null,
+        dataLimitBytesOverride: Long? = null,
+    ): Int {
         try {
-            val conf = shareLockedConfig(guid)
+            val conf = shareLockedConfig(guid, expiryEpochMinuteOverride, dataLimitBytesOverride)
             if (TextUtils.isEmpty(conf)) return -1
 
             Utils.setClipboard(context, conf)
@@ -345,11 +418,19 @@ object AngConfigManager {
      * Creates a QR code bitmap from the locked-package text of a locked profile.
      *
      * @param guid The GUID of the configuration.
+     * @param expiryEpochMinuteOverride The expiry wall-clock minute to ship, or null to
+     *                                  use the profile's stored value.
+     * @param dataLimitBytesOverride The data-volume limit to ship, or null to use the
+     *                               profile's stored value.
      * @return The QR code bitmap, or null when the profile cannot be shared as locked.
      */
-    fun shareLocked2QRCode(guid: String): Bitmap? {
+    fun shareLocked2QRCode(
+        guid: String,
+        expiryEpochMinuteOverride: Long? = null,
+        dataLimitBytesOverride: Long? = null,
+    ): Bitmap? {
         try {
-            val conf = shareLockedConfig(guid)
+            val conf = shareLockedConfig(guid, expiryEpochMinuteOverride, dataLimitBytesOverride)
             if (TextUtils.isEmpty(conf)) return null
             return QRCodeDecoder.createQRCode(conf)
 
@@ -365,11 +446,20 @@ object AngConfigManager {
      *
      * @param context The context; the file is written under its cache directory.
      * @param guid The GUID of the configuration.
+     * @param expiryEpochMinuteOverride The expiry wall-clock minute to ship, or null to
+     *                                  use the profile's stored value.
+     * @param dataLimitBytesOverride The data-volume limit to ship, or null to use the
+     *                               profile's stored value.
      * @return The created file, or null when the profile cannot be shared as locked.
      */
-    fun writeLockedPackageFile(context: Context, guid: String): File? {
+    fun writeLockedPackageFile(
+        context: Context,
+        guid: String,
+        expiryEpochMinuteOverride: Long? = null,
+        dataLimitBytesOverride: Long? = null,
+    ): File? {
         return try {
-            val conf = shareLockedConfig(guid)
+            val conf = shareLockedConfig(guid, expiryEpochMinuteOverride, dataLimitBytesOverride)
             if (TextUtils.isEmpty(conf)) return null
             val file = File(context.cacheDir, "locked-config-$guid.txt")
             file.writeText(conf)
@@ -414,7 +504,14 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return The number of configurations parsed.
      */
-    private fun parseBatchConfig(servers: String?, subid: String, append: Boolean, locked: Boolean = false): Int {
+    private fun parseBatchConfig(
+        servers: String?,
+        subid: String,
+        append: Boolean,
+        locked: Boolean = false,
+        expiryEpochMinute: Long = 0L,
+        dataLimitBytes: Long = 0L,
+    ): Int {
         try {
             if (servers == null) {
                 return 0
@@ -443,7 +540,12 @@ object AngConfigManager {
             val allConfigs = v2raynConfigs + configs
 
             val parsedProfiles = allConfigs.map { parsed ->
-                ParsedProfile(profile = parsed, locked = locked)
+                ParsedProfile(
+                    profile = parsed,
+                    locked = locked,
+                    expiryEpochMinute = expiryEpochMinute,
+                    dataLimitBytes = dataLimitBytes,
+                )
             }
 
             if (parsedProfiles.isNotEmpty()) {
@@ -477,13 +579,13 @@ object AngConfigManager {
     ) {
         val keyToProfile = linkedMapOf<String, ProfileItem>()
         val rawConfigs = mutableMapOf<String, String>()
-        val lockedKeys = mutableListOf<String>()
+        val importedLocks = mutableListOf<Pair<String, Pair<Long, Long>>>()
 
         configs.forEach { parsed ->
             val key = Utils.getUuid()
             keyToProfile[key] = parsed.profile
             parsed.rawConfig?.let { raw -> rawConfigs[key] = raw }
-            if (parsed.locked) lockedKeys.add(key)
+            if (parsed.locked) importedLocks.add(key to (parsed.expiryEpochMinute to parsed.dataLimitBytes))
         }
 
         MmkvManager.saveServerProfiles(
@@ -492,11 +594,13 @@ object AngConfigManager {
             subscriptionId = subid,
             append = append,
         )
-        lockedKeys.forEach { key ->
+        importedLocks.forEach { (key, settings) ->
             // Profiles imported from a locked share keep a permanent lock that the UI
             // cannot unlock; the sharer's own lock stays editable on the originating
-            // device because it is never written through this import path.
-            MmkvManager.encodeProfileImportedLock(key)
+            // device because it is never written through this import path. The package's
+            // lock conditions are re-applied so the recipient inherits the same expiry
+            // and data limit.
+            MmkvManager.encodeProfileImportedLock(key, settings.first, settings.second)
         }
     }
 
@@ -508,7 +612,14 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return The number of configurations parsed.
      */
-    private fun parseCustomConfigServer(server: String?, subid: String, append: Boolean, locked: Boolean = false): Int {
+    private fun parseCustomConfigServer(
+        server: String?,
+        subid: String,
+        append: Boolean,
+        locked: Boolean = false,
+        expiryEpochMinute: Long = 0L,
+        dataLimitBytes: Long = 0L,
+    ): Int {
         if (server == null) {
             return 0
         }
@@ -529,6 +640,8 @@ object AngConfigManager {
                             profile = config,
                             rawConfig = JsonUtil.toJsonPretty(srv) ?: "",
                             locked = locked,
+                            expiryEpochMinute = expiryEpochMinute,
+                            dataLimitBytes = dataLimitBytes,
                         )
                     }
                     commitProfiles(configs, subid, append)
@@ -546,7 +659,7 @@ object AngConfigManager {
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(
-                    configs = listOf(ParsedProfile(config, server, locked)),
+                    configs = listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes)),
                     subid = subid,
                     append = append,
                 )
@@ -563,7 +676,7 @@ object AngConfigManager {
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(
-                    configs = listOf(ParsedProfile(config, server, locked)),
+                    configs = listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes)),
                     subid = subid,
                     append = append,
                 )

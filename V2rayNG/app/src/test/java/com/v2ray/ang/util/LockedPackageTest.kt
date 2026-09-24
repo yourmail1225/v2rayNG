@@ -25,7 +25,66 @@ class LockedPackageTest {
 
         assertEquals(1, parsed.entries.size)
         assertEquals("vmess://AAAA", parsed.entries[0].content)
+        assertEquals(0L, parsed.entries[0].expiryEpochMinute)
+        assertEquals(0L, parsed.entries[0].dataLimitBytes)
         assertEquals("", parsed.remaining.trim())
+    }
+
+    @Test
+    fun roundTripPreservesLockSettings() {
+        val text = LockedPackage.encode(
+            listOf(
+                LockedPackage.LockedEntry(
+                    content = "vmess://AAAA",
+                    expiryEpochMinute = 29_146_230L,
+                    dataLimitBytes = 1_048_576L,
+                )
+            )
+        )
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals(1, parsed.entries.size)
+        assertEquals("vmess://AAAA", parsed.entries[0].content)
+        assertEquals(29_146_230L, parsed.entries[0].expiryEpochMinute)
+        assertEquals(1_048_576L, parsed.entries[0].dataLimitBytes)
+    }
+
+    @Test
+    fun entryWithoutLockConditionsDefaultsToZero() {
+        val parsed = LockedPackage.parse(
+            LockedPackage.HEADER + "\n" +
+                """[{"content":"ss://BBBB"}]""" + "\n" +
+                LockedPackage.FOOTER
+        )
+
+        assertEquals(1, parsed.entries.size)
+        assertEquals("ss://BBBB", parsed.entries[0].content)
+        assertEquals(0L, parsed.entries[0].expiryEpochMinute)
+        assertEquals(0L, parsed.entries[0].dataLimitBytes)
+    }
+
+    @Test
+    fun legacyStringArrayFormatStillParses() {
+        // Preceding released format: a plain array of config strings.
+        val text = LockedPackage.HEADER + "\n" +
+            """["vmess://AAAA","ss://BBBB"]""" + "\n" +
+            LockedPackage.FOOTER
+
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals(2, parsed.entries.size)
+        assertEquals("vmess://AAAA", parsed.entries[0].content)
+        assertEquals("ss://BBBB", parsed.entries[1].content)
+        assertEquals(0L, parsed.entries[0].expiryEpochMinute)
+        assertEquals(0L, parsed.entries[1].dataLimitBytes)
+    }
+
+    @Test
+    fun invalidJsonBlockYieldsNoEntries() {
+        val text = LockedPackage.HEADER + "\nnot-json\n" + LockedPackage.FOOTER
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals(0, parsed.entries.size)
     }
 
     @Test

@@ -120,8 +120,17 @@ class MainActivity : HelperBaseComponentActivity() {
                     is MainAction.EditServer -> editServer(action.guid, action.profile)
                     is MainAction.ShareClipboard -> shareToClipboard(action.guid)
                     is MainAction.ShareFullContent -> shareFullContentAsync(action.guid)
-                    is MainAction.ShareLockedClipboard -> shareLockedToClipboard(action.guid)
-                    is MainAction.ShareLockedFile -> shareLockedFile(action.guid)
+                    is MainAction.ShareLockedClipboard -> shareLockedToClipboard(
+                        action.guid,
+                        action.expiryEpochMinute,
+                        action.dataLimitBytes,
+                    )
+
+                    is MainAction.ShareLockedFile -> shareLockedFile(
+                        action.guid,
+                        action.expiryEpochMinute,
+                        action.dataLimitBytes,
+                    )
                     else -> mainViewModel.onAction(action)
                 }
             },
@@ -142,17 +151,22 @@ class MainActivity : HelperBaseComponentActivity() {
         }
     }
 
-    private fun shareLockedToClipboard(guid: String) {
-        if (AngConfigManager.shareLocked2Clipboard(this, guid) == 0) {
+    private fun shareLockedToClipboard(guid: String, expiryEpochMinute: Long?, dataLimitBytes: Long?) {
+        if (AngConfigManager.shareLocked2Clipboard(this, guid, expiryEpochMinute, dataLimitBytes) == 0) {
             toastSuccess(R.string.toast_success)
         } else {
             toastError(R.string.toast_failure)
         }
     }
 
-    private fun shareLockedFile(guid: String) {
+    private fun shareLockedFile(guid: String, expiryEpochMinute: Long?, dataLimitBytes: Long?) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val file = AngConfigManager.writeLockedPackageFile(this@MainActivity, guid)
+            val file = AngConfigManager.writeLockedPackageFile(
+                this@MainActivity,
+                guid,
+                expiryEpochMinute,
+                dataLimitBytes,
+            )
             if (file == null) {
                 withContext(Dispatchers.Main) { toastError(R.string.toast_failure) }
                 return@launch
@@ -318,7 +332,9 @@ class MainActivity : HelperBaseComponentActivity() {
     }
 
     private fun editServer(guid: String, profile: ProfileItem) {
-        if (mainViewModel.isProfileLocked(guid)) {
+        // A profile in a group with an active lock, like a profile-locked or
+        // permanently-locked one, is not editable.
+        if (mainViewModel.isProfileLocked(guid) || mainViewModel.isGroupLocked(profile.subscriptionId)) {
             toastError(R.string.toast_failure)
             return
         }

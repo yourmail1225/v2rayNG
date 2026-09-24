@@ -372,8 +372,9 @@ private fun ServerListItem(
                         )
                     }
                 } else if (row.locked) {
-                    // A locked profile opens the more menu (locked-artifact share, unlock,
-                    // delete); its generic share and edit actions are removed.
+                    // A locked profile (own lock, permanent lock, or a group with an
+                    // active lock) opens the more menu straight to delete-only; its
+                    // generic share, edit, and lock-unlock actions are all removed.
                     IconButton(onClick = { actions.more(row.guid, row.profile, true) }, Modifier.size(36.dp)) {
                         Icon(
                             painterResource(R.drawable.ic_lock_24dp),

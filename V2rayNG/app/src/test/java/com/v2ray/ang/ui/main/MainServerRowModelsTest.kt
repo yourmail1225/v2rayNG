@@ -1,6 +1,10 @@
 package com.v2ray.ang.ui.main
 
+import com.v2ray.ang.dto.entities.GroupLockConfig
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
+import com.v2ray.ang.dto.entities.ServersCache
+import com.v2ray.ang.enums.EConfigType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -115,6 +119,108 @@ class MainServerRowModelsTest {
             dataLimitBytes = 100,
         )
         assertTrue(buildLockUsage(aff).hasDataLimit)
+    }
+
+    @Test
+    fun buildGroupLockUsageIsEmptyWhenNoGroupLock() {
+        assertFalse(buildGroupLockUsage(null).isActive)
+    }
+
+    @Test
+    fun buildGroupLockUsageIsEmptyWhenGroupLockDisabled() {
+        val lock = GroupLockConfig(
+            enabled = false,
+            expiryEpochMinute = 200,
+            dataLimitBytes = 100,
+            usedBytes = 10,
+        )
+        assertFalse(buildGroupLockUsage(lock).isActive)
+    }
+
+    @Test
+    fun buildGroupLockUsagePopulatesCombinedGroupCounter() {
+        val lock = GroupLockConfig(
+            enabled = true,
+            expiryEpochMinute = 200,
+            startEpochMinute = 100,
+            dataLimitBytes = 100,
+            usedBytes = 10,
+        )
+        val usage = buildGroupLockUsage(lock)
+        // The whole-group shared counter, not a per-profile share.
+        assertEquals(10L, usage.usedBytes)
+        assertEquals(100L, usage.dataLimitBytes)
+        assertEquals(200L, usage.expiryEpochMinute)
+        assertEquals(100L, usage.startEpochMinute)
+        assertTrue(usage.isActive)
+        assertTrue(usage.nowEpochMinute > 0L)
+    }
+
+    @Test
+    fun activeGroupLockMarksUnlockedProfilesLocked() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = false,
+            ),
+            subscriptionRemarks = "",
+            affiliation = null,
+            groupLock = GroupLockConfig(
+                enabled = true,
+                dataLimitBytes = 100,
+                usedBytes = 25,
+            ),
+        )
+        assertTrue(row.locked)
+        // With no profile lock of its own, the row renders the group-wide quota.
+        assertEquals(25L, row.usage.usedBytes)
+        assertEquals(100L, row.usage.dataLimitBytes)
+        assertTrue(row.usage.isActive)
+    }
+
+    @Test
+    fun profileLockTakesPrecedenceOverGroupLockUsage() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = true,
+            ),
+            subscriptionRemarks = "",
+            affiliation = ServerAffiliationInfo(
+                locked = true,
+                dataLimitBytes = 50,
+                usedBytes = 5,
+                expiryEpochMinute = 200,
+                startEpochMinute = 100,
+            ),
+            groupLock = GroupLockConfig(
+                enabled = true,
+                dataLimitBytes = 100,
+                usedBytes = 25,
+            ),
+        )
+        assertTrue(row.locked)
+        // The profile's own more-specific lock drives the card bars.
+        assertEquals(5L, row.usage.usedBytes)
+        assertEquals(50L, row.usage.dataLimitBytes)
+    }
+
+    @Test
+    fun disabledGroupLockLeavesProfileUnlocked() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = false,
+            ),
+            subscriptionRemarks = "g",
+            affiliation = null,
+            groupLock = GroupLockConfig(enabled = false),
+        )
+        assertFalse(row.locked)
+        assertFalse(row.usage.isActive)
     }
 
     @Test

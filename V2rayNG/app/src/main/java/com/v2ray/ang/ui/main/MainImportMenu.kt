@@ -70,10 +70,12 @@ internal fun serverMenuActions(
     isLocked: Boolean,
 ): List<ServerMenuAction> {
     val candidates = if (isLocked) {
-        // A permanently locked profile exposes no lock-link/lock-file/lock-settings
-        // actions and no generic share or edit; only unlock and delete remain.
+        // A locked profile - profile-locked, permanently locked, or in a group with an
+        // active lock - exposes no lock-link/lock-file/lock-settings actions and no
+        // generic share or edit; it cannot be unlocked from the menu either. Only
+        // deletion remains. Configs are extracted from other lock-enabled devices by
+        // importing the locked package that had been shared from the lock editor.
         listOf(
-            ServerMenuAction.Unlock,
             ServerMenuAction.Delete
         )
     } else {

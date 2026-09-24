@@ -58,9 +58,8 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedProfileMenuShowsOnlyUnlockAndDelete() {
+    fun lockedProfileMenuShowsOnlyDelete() {
         val expected = listOf(
-            ServerMenuAction.Unlock,
             ServerMenuAction.Delete,
         )
         assertEquals(
@@ -70,14 +69,25 @@ class MainImportMenuTest {
     }
 
     @Test
-    fun lockedComplexProfileMenuShowsOnlyUnlockAndDelete() {
+    fun lockedComplexProfileMenuShowsOnlyDelete() {
         assertEquals(
             listOf(
-                ServerMenuAction.Unlock,
                 ServerMenuAction.Delete,
             ),
             serverMenuActions(isComplexProfile = true, includeManagementActions = true, isLocked = true)
         )
+    }
+
+    @Test
+    fun lockedProfileMenuContainsNoShareEditOrUnlockActions() {
+        // A locked profile - profile-locked, permanently locked, or in a group with an
+        // active lock - cannot be shared, edited, or unlocked from the menu.
+        val actions = serverMenuActions(isComplexProfile = false, includeManagementActions = true, isLocked = true)
+        assertTrue(actions.none { it.isShareAction })
+        assertTrue(actions.none { it == ServerMenuAction.Edit })
+        assertTrue(actions.none { it == ServerMenuAction.Unlock })
+        assertTrue(actions.none { it == ServerMenuAction.LockSettings })
+        assertTrue(actions.none { it.isLockAction })
     }
 
     @Test

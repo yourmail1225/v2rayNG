@@ -252,14 +252,26 @@ AppConfig.MSG_STATE_STOP_SUCCESS -> MainServiceEvent.StateStopSuccess
     override fun share2Clipboard(guid: String): Boolean =
         AngConfigManager.share2Clipboard(app, guid) == 0
 
-    override fun shareLocked2QRCode(guid: String): android.graphics.Bitmap? =
-        AngConfigManager.shareLocked2QRCode(guid)
+    override fun shareLocked2QRCode(
+        guid: String,
+        expiryEpochMinute: Long?,
+        dataLimitBytes: Long?,
+    ): android.graphics.Bitmap? =
+        AngConfigManager.shareLocked2QRCode(guid, expiryEpochMinute, dataLimitBytes)
 
-    override fun shareLocked2Clipboard(guid: String): Boolean =
-        AngConfigManager.shareLocked2Clipboard(app, guid) == 0
+    override fun shareLocked2Clipboard(
+        guid: String,
+        expiryEpochMinute: Long?,
+        dataLimitBytes: Long?,
+    ): Boolean =
+        AngConfigManager.shareLocked2Clipboard(app, guid, expiryEpochMinute, dataLimitBytes) == 0
 
-    override fun writeLockedPackageFile(guid: String): java.io.File? =
-        AngConfigManager.writeLockedPackageFile(app, guid)
+    override fun writeLockedPackageFile(
+        guid: String,
+        expiryEpochMinute: Long?,
+        dataLimitBytes: Long?,
+    ): java.io.File? =
+        AngConfigManager.writeLockedPackageFile(app, guid, expiryEpochMinute, dataLimitBytes)
 
     override fun sendMsg2Service(msgId: Int, content: String) =
         MessageHelper.sendMsg2Service(app, msgId, content)

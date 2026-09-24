@@ -254,7 +254,11 @@ class MainViewModel(
             }
 
             is MainAction.ShareLockedQRCode -> {
-                val bitmap = dataSource.shareLocked2QRCode(action.guid)
+                val bitmap = dataSource.shareLocked2QRCode(
+                    action.guid,
+                    action.expiryEpochMinute,
+                    action.dataLimitBytes,
+                )
                 _uiState.update { it.copy(shareQRCodeBitmap = bitmap) }
             }
 
@@ -374,11 +378,18 @@ class MainViewModel(
         } else {
             emptyMap()
         }
+        // Group locks are keyed per subscription; decode each once per row build so
+        // every profile in a group sees the same combined quota.
+        val groupLocks = servers.asSequence()
+            .map { it.profile.subscriptionId }
+            .distinct()
+            .associateWith { subscriptionId -> dataSource.decodeGroupLock(subscriptionId) }
         return servers.map { server ->
             buildServerRowUiModel(
                 server = server,
                 subscriptionRemarks = subscriptionRemarks[server.profile.subscriptionId].orEmpty(),
                 affiliation = dataSource.decodeAffiliationInfo(server.guid),
+                groupLock = groupLocks[server.profile.subscriptionId],
             )
         }
     }
@@ -571,6 +582,12 @@ class MainViewModel(
     fun isProfileLocked(guid: String): Boolean = dataSource.isProfileLocked(guid)
 
     /**
+     * Whether the subscription group carries an active group lock. With one enabled,
+     * every profile in the group is treated as locked in the UI.
+     */
+    fun isGroupLocked(groupId: String): Boolean = dataSource.decodeGroupLock(groupId).enabled
+
+    /**
      * Returns the lock-denial for a profile, or null when both its group and its own
      * lock accept connections.
      */
@@ -726,14 +743,23 @@ class MainViewModel(
             toastError(R.string.lock_group_require_condition)
             return
         }
-        val usedBytes = dataSource.decodeGroupLock(action.groupId).usedBytes
+        val previous = dataSource.decodeGroupLock(action.groupId)
+        // Mirror the profile lock: when the group expiry is set or changes, the
+        // remaining-time accounting window restarts at the current minute.
+        val startEpochMinute =
+            if (action.enabled && action.expiryEpochMinute != 0L && action.expiryEpochMinute != previous.expiryEpochMinute) {
+                LockEvaluator.todayEpochMinute()
+            } else {
+                previous.startEpochMinute
+            }
         dataSource.encodeGroupLock(
             action.groupId,
             GroupLockConfig(
                 enabled = action.enabled,
                 expiryEpochMinute = action.expiryEpochMinute,
+                startEpochMinute = startEpochMinute,
                 dataLimitBytes = action.dataLimitBytes,
-                usedBytes = usedBytes,
+                usedBytes = previous.usedBytes,
             )
         )
         _uiState.update { it.copy(groupLockEditor = null) }

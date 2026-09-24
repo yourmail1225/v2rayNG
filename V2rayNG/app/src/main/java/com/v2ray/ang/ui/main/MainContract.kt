@@ -90,9 +90,29 @@ sealed interface MainAction {
     data class ShareQRCode(val guid: String) : MainAction
     data class ShareClipboard(val guid: String) : MainAction
     data class ShareFullContent(val guid: String) : MainAction
-    data class ShareLockedQRCode(val guid: String) : MainAction
-    data class ShareLockedClipboard(val guid: String) : MainAction
-    data class ShareLockedFile(val guid: String) : MainAction
+
+    /**
+     * Shares a profile as a locked package. The optional overrides let the lock editor
+     * ship the expiry and data limit currently being edited, before they are saved;
+     * when null the profile's stored lock conditions are used.
+     */
+    data class ShareLockedQRCode(
+        val guid: String,
+        val expiryEpochMinute: Long? = null,
+        val dataLimitBytes: Long? = null,
+    ) : MainAction
+
+    data class ShareLockedClipboard(
+        val guid: String,
+        val expiryEpochMinute: Long? = null,
+        val dataLimitBytes: Long? = null,
+    ) : MainAction
+
+    data class ShareLockedFile(
+        val guid: String,
+        val expiryEpochMinute: Long? = null,
+        val dataLimitBytes: Long? = null,
+    ) : MainAction
     data object DismissQRCodeDialog : MainAction
 
     data class ImportBatchConfig(val configText: String) : MainAction

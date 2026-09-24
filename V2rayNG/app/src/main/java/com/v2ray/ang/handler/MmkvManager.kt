@@ -528,15 +528,25 @@ object MmkvManager {
      * Marks a server profile as imported from a locked share: it stays locked in the
      * UI and no unlock or lock-editing entry point is offered for it.
      *
+     * The expiry moment and data limit shipped in the locked package are stamped on the
+     * imported profile, so the recipient inherits the sharer's lock conditions.
+     *
      * @param guid The server GUID.
+     * @param expiryEpochMinute The lock expiry wall-clock minute to apply, 0 for none.
+     * @param dataLimitBytes The lock data-volume limit to apply, 0 for none.
      */
-    fun encodeProfileImportedLock(guid: String) {
+    fun encodeProfileImportedLock(guid: String, expiryEpochMinute: Long = 0L, dataLimitBytes: Long = 0L) {
         if (guid.isBlank()) {
             return
         }
         val aff = decodeServerAffiliationInfo(guid) ?: ServerAffiliationInfo()
+        if (expiryEpochMinute != 0L && expiryEpochMinute != aff.expiryEpochMinute) {
+            aff.startEpochMinute = LockEvaluator.todayEpochMinute()
+        }
         aff.locked = true
         aff.persistentLock = true
+        aff.expiryEpochMinute = expiryEpochMinute
+        aff.dataLimitBytes = dataLimitBytes
         serverAffStorage.encode(guid, JsonUtil.toJson(aff))
     }
 

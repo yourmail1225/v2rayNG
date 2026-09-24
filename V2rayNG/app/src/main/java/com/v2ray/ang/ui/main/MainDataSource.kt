@@ -70,9 +70,29 @@ interface MainDataSource : Closeable {
     fun shareNonCustomConfigsToClipboard(guids: List<String>): Int
     fun share2QRCode(guid: String): android.graphics.Bitmap?
     fun share2Clipboard(guid: String): Boolean
-    fun shareLocked2QRCode(guid: String): android.graphics.Bitmap?
-    fun shareLocked2Clipboard(guid: String): Boolean
-    fun writeLockedPackageFile(guid: String): java.io.File?
+
+    /**
+     * Shares a profile as a locked package. Overrides ship the lock conditions edited
+     * in the lock dialog before they are saved; null values fall back to the profile's
+     * stored conditions.
+     */
+    fun shareLocked2QRCode(
+        guid: String,
+        expiryEpochMinute: Long? = null,
+        dataLimitBytes: Long? = null,
+    ): android.graphics.Bitmap?
+
+    fun shareLocked2Clipboard(
+        guid: String,
+        expiryEpochMinute: Long? = null,
+        dataLimitBytes: Long? = null,
+    ): Boolean
+
+    fun writeLockedPackageFile(
+        guid: String,
+        expiryEpochMinute: Long? = null,
+        dataLimitBytes: Long? = null,
+    ): java.io.File?
 
     fun sendMsg2Service(msgId: Int, content: String)
     fun sendMsg2TestService(msg: TestServiceMessage, requestId: String? = null)

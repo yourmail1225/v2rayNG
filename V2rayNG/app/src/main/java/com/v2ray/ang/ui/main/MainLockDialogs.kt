@@ -75,8 +75,8 @@ fun ProfileLockEditorDialog(
     onDismiss: () -> Unit,
     onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
-    onShareLink: (() -> Unit)? = null,
-    onShareQRCode: (() -> Unit)? = null,
+    onShareLink: ((expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit)? = null,
+    onShareQRCode: ((expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit)? = null,
 ) {
     LockEditorDialog(
         title = { Text(editor.serverName) },
@@ -106,8 +106,8 @@ private fun LockEditorDialog(
     onDismiss: () -> Unit,
     onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
-    onShareLink: (() -> Unit)? = null,
-    onShareQRCode: (() -> Unit)? = null,
+    onShareLink: ((expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit)? = null,
+    onShareQRCode: ((expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit)? = null,
 ) {
     var enabledState by rememberSaveable(editorKey) { mutableStateOf(enabled) }
     var expiryText by rememberSaveable(editorKey) {
@@ -120,6 +120,22 @@ private fun LockEditorDialog(
     }
     var limitMbText by rememberSaveable(editorKey) {
         mutableStateOf((dataLimitBytes / MB).takeIf { it > 0L }?.toString().orEmpty())
+    }
+
+    // Lock conditions as currently edited, shared with both the save button and the
+    // lock-link/lock-QR share buttons so a shared package carries the values the user
+    // is about to apply, even before they hit save.
+    val currentExpiry = LockEvaluator.parseEpochMinute(expiryText)
+    val currentLimitBytes = (limitMbText.toLongOrNull() ?: 0L).let { limitMb ->
+        if (limitMb > 0L) {
+            try {
+                Math.multiplyExact(limitMb, MB)
+            } catch (e: ArithmeticException) {
+                0L
+            }
+        } else {
+            0L
+        }
     }
 
     AlertDialog(
@@ -174,7 +190,7 @@ private fun LockEditorDialog(
                     ) {
                         onShareLink?.let {
                             TextButton(
-                                onClick = it,
+                                onClick = { it(currentExpiry, currentLimitBytes) },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(stringResource(R.string.lock_share_locked_link))
@@ -182,7 +198,7 @@ private fun LockEditorDialog(
                         }
                         onShareQRCode?.let {
                             TextButton(
-                                onClick = it,
+                                onClick = { it(currentExpiry, currentLimitBytes) },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(stringResource(R.string.lock_share_locked_qrcode))
@@ -197,20 +213,7 @@ private fun LockEditorDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    val expiry = LockEvaluator.parseEpochMinute(expiryText)
-                    val limitMb = limitMbText.toLongOrNull() ?: 0L
-                    val limitBytes = if (limitMb > 0L) {
-                        try {
-                            Math.multiplyExact(limitMb, MB)
-                        } catch (e: ArithmeticException) {
-                            0L
-                        }
-                    } else {
-                        0L
-                    }
-                    onSave(enabledState, expiry, limitBytes)
-                }
+                onClick = { onSave(enabledState, currentExpiry, currentLimitBytes) }
             ) {
                 Text(stringResource(R.string.action_save))
             }
