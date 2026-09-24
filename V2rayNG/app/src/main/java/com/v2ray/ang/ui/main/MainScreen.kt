@@ -165,6 +165,14 @@ fun MainScreen(
                 )
             },
             onReset = { onAction(MainAction.ResetProfileUsedBytes(editor.guid)) },
+            onShareLink = {
+                onAction(MainAction.DismissProfileLockEditor)
+                onAction(MainAction.ShareLockedClipboard(editor.guid))
+            },
+            onShareQRCode = {
+                onAction(MainAction.DismissProfileLockEditor)
+                onAction(MainAction.ShareLockedQRCode(editor.guid))
+            },
         )
     }
     if (shareQRCodeBitmap != null) {

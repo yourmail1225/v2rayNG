@@ -597,6 +597,8 @@
     <string name="lock_group_expired">تم حظر الاتصال: انتهى قفل هذه المجموعة</string>
     <string name="lock_group_data_exceeded">تم حظر الاتصال: وصلت هذه المجموعة إلى حد البيانات</string>
     <string name="lock_profile_settings">إعدادات القفل</string>
+    <string name="lock_share_locked_link">مشاركة الرابط المقفل</string>
+    <string name="lock_share_locked_qrcode">مشاركة رمز QR المقفل</string>
     <string name="lock_profile_enable">قفل هذا الخادم</string>
     <string name="lock_profile_expired">تم حظر الاتصال: انتهى قفل هذا الخادم</string>
     <string name="lock_profile_data_exceeded">تم حظر الاتصال: وصل هذا الخادم إلى حد البيانات</string>

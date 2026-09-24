@@ -587,6 +587,8 @@
     <string name="lock_group_expired">连接被阻止：此群组的锁定已到期</string>
     <string name="lock_group_data_exceeded">连接被阻止：此群组已达到数据限额</string>
     <string name="lock_profile_settings">锁定设置</string>
+    <string name="lock_share_locked_link">分享已锁定的链接</string>
+    <string name="lock_share_locked_qrcode">分享已锁定的二维码</string>
     <string name="lock_profile_enable">锁定此服务器</string>
     <string name="lock_profile_expired">连接被阻止：此服务器的锁定已到期</string>
     <string name="lock_profile_data_exceeded">连接被阻止：此服务器已达到数据限额</string>

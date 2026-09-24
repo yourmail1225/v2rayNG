@@ -310,12 +310,12 @@ object AngConfigManager {
     }
 
     /**
-     * Returns the locked-package text for a single locked profile, or an empty string
-     * when the profile is unlocked, missing, or has no shareable content. The payload
-     * stays exportable-but-locked: importing it re-imports the profile locked.
+     * Returns the locked-package text for a single profile, or an empty string when the
+     * profile is missing or has no shareable content. The payload stays
+     * exportable-but-locked: importing it re-imports the profile with a permanent lock
+     * that the recipient cannot unlock, no matter the lock state on this device.
      */
     fun shareLockedConfig(guid: String): String {
-        if (!MmkvManager.isProfileLocked(guid)) return ""
         val content = shareConfigContent(guid)
         if (content.isBlank()) return ""
         return LockedPackage.encode(listOf(LockedPackage.LockedEntry(content)))

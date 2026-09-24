@@ -587,6 +587,8 @@
     <string name="lock_group_expired">連線已封鎖：此群組的鎖定已到期</string>
     <string name="lock_group_data_exceeded">連線已封鎖：此群組已達資料上限</string>
     <string name="lock_profile_settings">鎖定設定</string>
+    <string name="lock_share_locked_link">分享已鎖定的連結</string>
+    <string name="lock_share_locked_qrcode">分享已鎖定的二維碼</string>
     <string name="lock_profile_enable">鎖定此伺服器</string>
     <string name="lock_profile_expired">連線已封鎖：此伺服器的鎖定已到期</string>
     <string name="lock_profile_data_exceeded">連線已封鎖：此伺服器已達資料上限</string>

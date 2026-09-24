@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,6 +75,8 @@ fun ProfileLockEditorDialog(
     onDismiss: () -> Unit,
     onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
+    onShareLink: (() -> Unit)? = null,
+    onShareQRCode: (() -> Unit)? = null,
 ) {
     LockEditorDialog(
         title = { Text(editor.serverName) },
@@ -86,6 +89,8 @@ fun ProfileLockEditorDialog(
         onDismiss = onDismiss,
         onSave = onSave,
         onReset = onReset,
+        onShareLink = onShareLink,
+        onShareQRCode = onShareQRCode,
     )
 }
 
@@ -101,6 +106,8 @@ private fun LockEditorDialog(
     onDismiss: () -> Unit,
     onSave: (enabled: Boolean, expiryEpochMinute: Long, dataLimitBytes: Long) -> Unit,
     onReset: () -> Unit,
+    onShareLink: (() -> Unit)? = null,
+    onShareQRCode: (() -> Unit)? = null,
 ) {
     var enabledState by rememberSaveable(editorKey) { mutableStateOf(enabled) }
     var expiryText by rememberSaveable(editorKey) {
@@ -160,6 +167,29 @@ private fun LockEditorDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (onShareLink != null || onShareQRCode != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        onShareLink?.let {
+                            TextButton(
+                                onClick = it,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.lock_share_locked_link))
+                            }
+                        }
+                        onShareQRCode?.let {
+                            TextButton(
+                                onClick = it,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.lock_share_locked_qrcode))
+                            }
+                        }
+                    }
+                }
                 TextButton(onClick = onReset) {
                     Text(stringResource(R.string.action_reset))
                 }

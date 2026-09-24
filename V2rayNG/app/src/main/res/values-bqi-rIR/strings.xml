@@ -589,6 +589,8 @@
     <string name="lock_group_expired">اتصال مسدود بی: قفل ای گروه به پایان نرسیه</string>
     <string name="lock_group_data_exceeded">اتصال مسدود بی: سهمیه ای گروه تموم بی</string>
     <string name="lock_profile_settings">تنظیمات قفل</string>
+    <string name="lock_share_locked_link">اشتراک لینک قفل‌کرده</string>
+    <string name="lock_share_locked_qrcode">نشر کد QR قفل‌کرده</string>
     <string name="lock_profile_enable">قفل کردن ای سرور</string>
     <string name="lock_profile_expired">اتصال مسدود بی: قفل ای سرور تموم بی</string>
     <string name="lock_profile_data_exceeded">اتصال مسدود بی: سهمیه ای سرور تموم بی</string>

@@ -589,6 +589,8 @@
     <string name="lock_group_expired">Connection blocked: the lock for this subscription group has expired.</string>
     <string name="lock_group_data_exceeded">Connection blocked: this subscription group has reached its data limit.</string>
     <string name="lock_profile_settings">Lock settings</string>
+    <string name="lock_share_locked_link">Share locked link</string>
+    <string name="lock_share_locked_qrcode">Share locked QR code</string>
     <string name="lock_profile_enable">Lock this profile</string>
     <string name="lock_profile_expired">Connection blocked: this profile\'s lock has expired.</string>
     <string name="lock_profile_data_exceeded">Connection blocked: this profile has reached its data limit.</string>

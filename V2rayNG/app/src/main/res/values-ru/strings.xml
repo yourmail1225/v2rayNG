@@ -593,6 +593,8 @@
     <string name="lock_group_expired">Соединение заблокировано: срок действия блокировки этой группы истёк</string>
     <string name="lock_group_data_exceeded">Соединение заблокировано: этой группой достигнут лимит данных</string>
     <string name="lock_profile_settings">Настройки блокировки</string>
+    <string name="lock_share_locked_link">Поделиться заблокированной ссылкой</string>
+    <string name="lock_share_locked_qrcode">Поделиться заблокированным QR-кодом</string>
     <string name="lock_profile_enable">Заблокировать этот сервер</string>
     <string name="lock_profile_expired">Соединение заблокировано: срок действия блокировки этого сервера истёк</string>
     <string name="lock_profile_data_exceeded">Соединение заблокировано: этим сервером достигнут лимит данных</string>
