@@ -887,14 +887,32 @@ object AngConfigManager {
      * @return The number of configurations parsed.
      */
     private fun parseConfigViaSub(server: String?, subid: String, append: Boolean): Int {
-        var count = parseBatchConfig(Utils.decode(server), subid, append)
+        var lockedCount = 0
+        var importText = server
+        if (server != null) {
+            val lockedParsed = LockedPackage.parse(server)
+            if (lockedParsed.entries.isNotEmpty()) {
+                lockedCount = lockedParsed.entries.sumOf { entry ->
+                    importLockedConfigContent(
+                        content = entry.content,
+                        subid = subid,
+                        append = append,
+                        expiryEpochMinute = entry.expiryEpochMinute,
+                        dataLimitBytes = entry.dataLimitBytes,
+                    )
+                }
+                importText = lockedParsed.remaining
+            }
+        }
+
+        var count = parseBatchConfig(Utils.decode(importText), subid, append)
         if (count <= 0) {
-            count = parseBatchConfig(server, subid, append)
+            count = parseBatchConfig(importText, subid, append)
         }
         if (count <= 0) {
-            count = parseCustomConfigServer(server, subid, append)
+            count = parseCustomConfigServer(importText, subid, append)
         }
-        return count
+        return lockedCount + count
     }
 
     /**
