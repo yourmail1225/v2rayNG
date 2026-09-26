@@ -72,16 +72,16 @@ object LockedPackage {
      * android.util.Log to report to.
      */
     private fun parseBlock(json: String): Pair<List<LockedEntry>, String> {
-        if (json.isBlank()) return emptyList() to ""
+        if (json.isBlank()) return emptyList<LockedEntry>() to ""
         return try {
             val element = JsonParser.parseString(json)
             when {
                 element.isJsonArray -> parseEntries(element.asJsonArray) to ""
                 element.isJsonObject -> parseObject(element.asJsonObject)
-                else -> emptyList() to ""
+                else -> emptyList<LockedEntry>() to ""
             }
         } catch (e: Exception) {
-            emptyList() to ""
+            emptyList<LockedEntry>() to ""
         }
     }
 

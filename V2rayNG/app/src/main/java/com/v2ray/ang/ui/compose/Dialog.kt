@@ -208,7 +208,7 @@ fun PasswordVerifyDialog(
             )
         ),
         onFieldChange = { _, value -> input = value; error = false },
-        confirmText = context.getString(R.string.action_apply),
+        confirmText = context.getString(R.string.action_ok),
         dismissText = context.getString(R.string.action_cancel),
         onConfirm = {
             if (verify(input)) onVerified() else error = true
