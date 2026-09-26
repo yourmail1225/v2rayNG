@@ -83,6 +83,7 @@ internal fun buildServerRowUiModel(
     subscriptionRemarks: String,
     affiliation: ServerAffiliationInfo?,
     groupLock: GroupLockConfig? = null,
+    sharedLockedUsedBytes: Long = 0L,
 ): ServerRowUiModel {
     val profile = server.profile
     // A profile in a group with an active lock is treated exactly like a locked
@@ -101,21 +102,36 @@ internal fun buildServerRowUiModel(
         testDelayMillis = server.testDelayMillis,
         subscriptionBadge = subscriptionRemarks.firstOrNull()?.toString().orEmpty(),
         locked = server.locked || groupLocked,
-        usage = if (groupLocked && !profileLockActive) {
+        usage = if (profileLockActive) {
+            // Profiles imported from a locked package (persistentLock) account their
+            // consumed data against one subscription-wide counter, so every card in the
+            // subscription shows the same remaining quota.
+            buildLockUsage(
+                affiliation,
+                sharedUsedBytes = if (affiliation?.persistentLock == true) {
+                    sharedLockedUsedBytes
+                } else {
+                    affiliation?.usedBytes ?: 0L
+                },
+            )
+        } else if (groupLocked) {
             buildGroupLockUsage(groupLock)
         } else {
-            buildLockUsage(affiliation)
+            LockUsageUiModel()
         },
     )
 }
 
-internal fun buildLockUsage(affiliation: ServerAffiliationInfo?): LockUsageUiModel {
+internal fun buildLockUsage(
+    affiliation: ServerAffiliationInfo?,
+    sharedUsedBytes: Long = affiliation?.usedBytes ?: 0L,
+): LockUsageUiModel {
     val aff = affiliation ?: return LockUsageUiModel()
     // Only an active profile lock enforces a quota; a disabled lock's leftover
     // expiry and data-limit values are not shown as if they still applied.
     if (!aff.locked && !aff.persistentLock) return LockUsageUiModel()
     return LockUsageUiModel(
-        usedBytes = aff.usedBytes,
+        usedBytes = sharedUsedBytes,
         dataLimitBytes = aff.dataLimitBytes,
         expiryEpochMinute = aff.expiryEpochMinute,
         startEpochMinute = aff.startEpochMinute,

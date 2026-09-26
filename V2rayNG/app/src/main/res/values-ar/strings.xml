@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">رؤوس الطلب (بتنسيق JSON)</string>
     <string name="sub_setting_filter">مرشح تعبير نمطي للملاحظات</string>
+    <string name="sub_setting_password">كلمة مرور الاشتراك</string>
+    <string name="sub_password_prompt_title">أدخل كلمة مرور الاشتراك</string>
+    <string name="sub_password_change_message">أدخل كلمة مرور الاشتراك لتأكيد التغييرات.</string>
+    <string name="sub_password_delete_message">أدخل كلمة مرور الاشتراك لحذف هذا الاشتراك.</string>
+    <string name="sub_password_incorrect">كلمة المرور غير صحيحة.</string>
     <string name="sub_setting_enable">تفعيل التحديث</string>
     <string name="sub_auto_update">تفعيل التحديث التلقائي</string>
     <string name="sub_allow_insecure_url">السماح بعنوان HTTP غير آمن</string>

@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">Заголовки запроса (формат JSON)</string>
     <string name="sub_setting_filter">Фильтр названий (регулярное выражение)</string>
+    <string name="sub_setting_password">Пароль подписки</string>
+    <string name="sub_password_prompt_title">Введите пароль подписки</string>
+    <string name="sub_password_change_message">Введите пароль подписки для подтверждения изменений.</string>
+    <string name="sub_password_delete_message">Введите пароль подписки, чтобы удалить её.</string>
+    <string name="sub_password_incorrect">Неверный пароль.</string>
     <string name="sub_setting_enable">Включить обновление</string>
     <string name="sub_auto_update">Использовать автообновление</string>
     <string name="sub_allow_insecure_url">Разрешать незащищённые HTTP-адреса</string>

@@ -156,4 +156,51 @@ class LockedPackageTest {
         assertEquals(0, parsed.entries.size)
         assertTrue(parsed.remaining.contains("ss://payload"))
     }
+
+    @Test
+    fun objectFormParsesPasswordAndSharedQuota() {
+        val text = LockedPackage.HEADER + "\n" +
+            """{"password":"s3cret","expiryEpochMinute":120,"dataLimitBytes":500,""" +
+            """"entries":[{"content":"vless://a"},{"content":"ss://b"}]}""" + "\n" +
+            LockedPackage.FOOTER
+
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals("s3cret", parsed.password)
+        assertEquals(2, parsed.entries.size)
+        // Package-level values override the per-entry defaults.
+        parsed.entries.forEach {
+            assertEquals(120L, it.expiryEpochMinute)
+            assertEquals(500L, it.dataLimitBytes)
+        }
+    }
+
+    @Test
+    fun objectFormPackageValuesOverridePerEntryValues() {
+        val text = LockedPackage.HEADER + "\n" +
+            """{"password":"x","expiryEpochMinute":120,"dataLimitBytes":500,""" +
+            """"entries":[{"content":"vless://a","expiryEpochMinute":1,"dataLimitBytes":1}]}""" + "\n" +
+            LockedPackage.FOOTER
+
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals("x", parsed.password)
+        assertEquals(1, parsed.entries.size)
+        assertEquals(120L, parsed.entries[0].expiryEpochMinute)
+        assertEquals(500L, parsed.entries[0].dataLimitBytes)
+    }
+
+    @Test
+    fun objectFormWithoutPasswordHasBlankPassword() {
+        val text = LockedPackage.HEADER + "\n" +
+            """{"password":"","expiryEpochMinute":0,"dataLimitBytes":0,""" +
+            """"entries":[{"content":"vless://a"}]}""" + "\n" +
+            LockedPackage.FOOTER
+
+        val parsed = LockedPackage.parse(text)
+
+        assertEquals("", parsed.password)
+        assertEquals(1, parsed.entries.size)
+        assertEquals(0L, parsed.entries[0].expiryEpochMinute)
+    }
 }

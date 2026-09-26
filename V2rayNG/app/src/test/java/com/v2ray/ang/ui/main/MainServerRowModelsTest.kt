@@ -122,6 +122,29 @@ class MainServerRowModelsTest {
     }
 
     @Test
+    fun buildLockUsageWithPermanentLockUsesSharedCounter() {
+        val aff = ServerAffiliationInfo(
+            persistentLock = true,
+            dataLimitBytes = 100,
+            usedBytes = 5,
+        )
+        val usage = buildLockUsage(aff, sharedUsedBytes = 42)
+        // Imported package profiles share one subscription-wide counter.
+        assertEquals(42L, usage.usedBytes)
+        assertEquals(100L, usage.dataLimitBytes)
+    }
+
+    @Test
+    fun buildLockUsageWithoutSharedArgFallsBackToAffiliationCounter() {
+        val aff = ServerAffiliationInfo(
+            persistentLock = true,
+            dataLimitBytes = 100,
+            usedBytes = 7,
+        )
+        assertEquals(7L, buildLockUsage(aff).usedBytes)
+    }
+
+    @Test
     fun buildGroupLockUsageIsEmptyWhenNoGroupLock() {
         assertFalse(buildGroupLockUsage(null).isActive)
     }
@@ -221,6 +244,51 @@ class MainServerRowModelsTest {
         )
         assertFalse(row.locked)
         assertFalse(row.usage.isActive)
+    }
+
+    @Test
+    fun permanentLockedProfileRendersSharedSubscriptionCounter() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = true,
+            ),
+            subscriptionRemarks = "g",
+            affiliation = ServerAffiliationInfo(
+                persistentLock = true,
+                dataLimitBytes = 100,
+                usedBytes = 5,
+                expiryEpochMinute = 200,
+                startEpochMinute = 100,
+            ),
+            sharedLockedUsedBytes = 60,
+        )
+        assertTrue(row.locked)
+        // The subscription's shared used bytes, not the profile's own counter.
+        assertEquals(60L, row.usage.usedBytes)
+        assertEquals(100L, row.usage.dataLimitBytes)
+    }
+
+    @Test
+    fun ordinaryLockedProfileIgnoresSharedCounter() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = true,
+            ),
+            subscriptionRemarks = "g",
+            affiliation = ServerAffiliationInfo(
+                locked = true,
+                dataLimitBytes = 50,
+                usedBytes = 5,
+            ),
+            sharedLockedUsedBytes = 999,
+        )
+        // Editable profile locks keep their own per-profile used counter.
+        assertEquals(5L, row.usage.usedBytes)
+        assertEquals(50L, row.usage.dataLimitBytes)
     }
 
     @Test

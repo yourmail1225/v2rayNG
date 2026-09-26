@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">Tiêu đề yêu cầu (định dạng JSON)</string>
     <string name="sub_setting_filter">Bộ lọc biểu thức chính quy cho tên ghi chú</string>
+    <string name="sub_setting_password">Mật khẩu đăng ký</string>
+    <string name="sub_password_prompt_title">Nhập mật khẩu đăng ký</string>
+    <string name="sub_password_change_message">Nhập mật khẩu đăng ký để xác nhận thay đổi.</string>
+    <string name="sub_password_delete_message">Nhập mật khẩu đăng ký để xóa đăng ký này.</string>
+    <string name="sub_password_incorrect">Sai mật khẩu.</string>
     <string name="sub_setting_enable">Bật cập nhật</string>
     <string name="sub_auto_update">Bật tự động cập nhật</string>
     <string name="sub_allow_insecure_url">Cho phép địa chỉ HTTP không an toàn</string>

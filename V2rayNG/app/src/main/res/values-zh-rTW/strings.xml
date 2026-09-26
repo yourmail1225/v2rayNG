@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">請求標頭（JSON 格式）</string>
     <string name="sub_setting_filter">備註篩選條件（正規表示式）</string>
+    <string name="sub_setting_password">訂閱密碼</string>
+    <string name="sub_password_prompt_title">請輸入訂閱密碼</string>
+    <string name="sub_password_change_message">請輸入訂閱密碼以確認變更。</string>
+    <string name="sub_password_delete_message">請輸入訂閱密碼以刪除此訂閱。</string>
+    <string name="sub_password_incorrect">密碼錯誤。</string>
     <string name="sub_setting_enable">啟用更新</string>
     <string name="sub_auto_update">啟用自動更新</string>
     <string name="sub_allow_insecure_url">允許不安全的 HTTP 位址</string>

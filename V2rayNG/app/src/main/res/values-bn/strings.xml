@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">রিকোয়েস্ট হেডার (JSON ফরম্যাট)</string>
     <string name="sub_setting_filter">মন্তব্যের রেগুলার এক্সপ্রেশন ফিল্টার</string>
+    <string name="sub_setting_password">সাবস্ক্রিপশন পাসওয়ার্ড</string>
+    <string name="sub_password_prompt_title">সাবস্ক্রিপশন পাসওয়ার্ড লিখুন</string>
+    <string name="sub_password_change_message">পরিবর্তন নিশ্চিত করতে সাবস্ক্রিপশন পাসওয়ার্ড লিখুন।</string>
+    <string name="sub_password_delete_message">এই সাবস্ক্রিপশন সরাতে সাবস্ক্রিপশন পাসওয়ার্ড লিখুন।</string>
+    <string name="sub_password_incorrect">ভুল পাসওয়ার্ড।</string>
     <string name="sub_setting_enable">আপডেট সক্রিয় করুন</string>
     <string name="sub_auto_update">স্বয়ংক্রিয় আপডেট সক্রিয় করুন</string>
     <string name="sub_allow_insecure_url">অনিরাপদ HTTP ঠিকানা অনুমোদন করুন</string>

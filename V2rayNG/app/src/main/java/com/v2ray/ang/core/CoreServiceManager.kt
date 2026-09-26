@@ -113,9 +113,16 @@ object CoreServiceManager {
         val runningConfig = runningGuid?.let { MmkvManager.decodeServerConfig(it) }
         val denied = runningGuid?.let { guid ->
             runningConfig?.let { config ->
+                val affiliation = MmkvManager.decodeServerAffiliationInfo(guid)
+                val subscriptionUsed = if (affiliation?.persistentLock == true) {
+                    MmkvManager.getSubscriptionUsedBytes(config.subscriptionId)
+                } else {
+                    affiliation?.usedBytes ?: 0L
+                }
                 LockEvaluator.evaluateServer(
                     MmkvManager.decodeGroupLock(config.subscriptionId),
-                    MmkvManager.decodeServerAffiliationInfo(guid)
+                    affiliation,
+                    currentUsedBytes = subscriptionUsed,
                 ) as? LockEvaluator.Decision.Denied
             }
         }
@@ -427,7 +434,16 @@ object CoreServiceManager {
                 // running session once its lock expires or its volume is consumed, even
                 // when the speed loop owns the counter reads or the lock has no volume.
                 val denial = profileGuid?.let { guid ->
-                    LockEvaluator.evaluateServer(group, profile) as? LockEvaluator.Decision.Denied
+                    val subscriptionUsed = if (profile?.persistentLock == true) {
+                        MmkvManager.getSubscriptionUsedBytes(config.subscriptionId)
+                    } else {
+                        profile?.usedBytes ?: 0L
+                    }
+                    LockEvaluator.evaluateServer(
+                        group,
+                        profile,
+                        currentUsedBytes = subscriptionUsed,
+                    ) as? LockEvaluator.Decision.Denied
                 }
                 if (denial != null) {
                     LogUtil.i(

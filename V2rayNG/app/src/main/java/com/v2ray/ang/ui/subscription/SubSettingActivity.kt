@@ -47,6 +47,7 @@ import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.DeleteConfirmDialog
 import com.v2ray.ang.ui.compose.ItemDivider
 import com.v2ray.ang.ui.compose.NavigationBarsBottomPadding
+import com.v2ray.ang.ui.compose.PasswordVerifyDialog
 import com.v2ray.ang.ui.compose.QRCodeDialog
 import com.v2ray.ang.ui.compose.ReorderableListItem
 import com.v2ray.ang.ui.compose.SelectListDialog
@@ -114,6 +115,7 @@ fun SubSettingScreen(
     val subscriptions by viewModel.subsFlow.collectAsStateWithLifecycle()
     var showUpdateDialog by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<String?>(null) }
+    var passwordTarget by remember { mutableStateOf<String?>(null) }
     val confirmRemove = MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, false)
 
     var shareTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -212,8 +214,13 @@ fun SubSettingScreen(
                                         )
                                     }
                                     IconButton(onClick = {
-                                        if (confirmRemove) removeTarget = subCache.guid
-                                        else onRemoveSub(subCache.guid)
+                                        if (subCache.subscription.password.isNotEmpty()) {
+                                            passwordTarget = subCache.guid
+                                        } else if (confirmRemove) {
+                                            removeTarget = subCache.guid
+                                        } else {
+                                            onRemoveSub(subCache.guid)
+                                        }
                                     }) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_delete_24dp),
@@ -277,6 +284,24 @@ fun SubSettingScreen(
             },
             onDismiss = { removeTarget = null }
         )
+    }
+
+    if (passwordTarget != null) {
+        val target = subscriptions.firstOrNull { it.guid == passwordTarget }
+        if (target != null) {
+            PasswordVerifyDialog(
+                title = stringResource(R.string.sub_password_prompt_title),
+                message = stringResource(R.string.sub_password_delete_message),
+                verify = { input -> input.isNotEmpty() && input == target.subscription.password },
+                onVerified = {
+                    passwordTarget = null
+                    if (confirmRemove) removeTarget = target.guid else onRemoveSub(target.guid)
+                },
+                onDismiss = { passwordTarget = null }
+            )
+        } else {
+            passwordTarget = null
+        }
     }
 
     if (showUpdateDialog) {

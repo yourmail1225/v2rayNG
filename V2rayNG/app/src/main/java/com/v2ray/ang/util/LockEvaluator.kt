@@ -211,14 +211,22 @@ object LockEvaluator {
      * share) keeps denying even when its mutable [ServerAffiliationInfo.locked] flag is
      * somehow cleared, because importing never offers an unlock path.
      *
+     * Profiles imported from a locked package share one subscription-wide data cap, so
+     * callers pass the whole subscription's consumed bytes via [currentUsedBytes]
+     * instead of the running profile's own counter.
+     *
      * @param groupLock The subscription-group lock, or null when the group has none.
      * @param affiliation The server's affiliation info, or null when it has none.
      * @param nowEpochMinute The current wall-clock minute.
+     * @param currentUsedBytes The data consumed against the profile, defaulting to the
+     *                         affiliation's own counter so existing callers keep their
+     *                         per-profile semantics.
      */
     fun evaluateServer(
         groupLock: GroupLockConfig?,
         affiliation: ServerAffiliationInfo?,
         nowEpochMinute: Long = todayEpochMinute(),
+        currentUsedBytes: Long = affiliation?.usedBytes ?: 0L,
     ): Decision {
         val groupDecision = evaluate(groupLock, nowEpochMinute = nowEpochMinute)
         if (groupDecision is Decision.Denied) {
@@ -231,7 +239,7 @@ object LockEvaluator {
             expiryEpochMinute = aff.expiryEpochMinute,
             dataLimitBytes = aff.dataLimitBytes,
             nowEpochMinute = nowEpochMinute,
-            currentUsedBytes = aff.usedBytes,
+            currentUsedBytes = currentUsedBytes,
         )
     }
 }

@@ -475,6 +475,23 @@ object MmkvManager {
     }
 
     /**
+     * Sums the consumed bytes of every server in a subscription.
+     *
+     * Profiles imported from a locked package share one subscription-wide data cap:
+     * each profile's quota card shows (and connection enforcement applies) the total
+     * consumed across the whole subscription rather than the running profile alone.
+     *
+     * @param subscriptionId The subscription ID.
+     * @return The sum of the consumed-byte counters of all servers in the subscription.
+     */
+    fun getSubscriptionUsedBytes(subscriptionId: String): Long {
+        if (subscriptionId.isBlank()) return 0L
+        return decodeServerList(subscriptionId).sumOf { guid ->
+            decodeServerAffiliationInfo(guid)?.usedBytes ?: 0L
+        }
+    }
+
+    /**
      * Encodes the server test delay in milliseconds.
      *
      * @param guid The server GUID.
@@ -817,6 +834,23 @@ object MmkvManager {
     fun decodeSubscription(subscriptionId: String): SubscriptionItem? {
         val json = subStorage.decodeString(subscriptionId) ?: return null
         return JsonUtil.fromJsonSafe(json, SubscriptionItem::class.java)
+    }
+
+    /**
+     * Stores the password delivered by a locked-package subscription without touching
+     * the rest of the subscription item, so a refresh can update it independently of
+     * the caller's cached copy.
+     *
+     * @param subscriptionId The subscription ID; blank means no subscription to update.
+     * @param password The password to store; blank is ignored so a plain subscription
+     *                 keeps whatever password the user set manually.
+     */
+    fun applySubscriptionPassword(subscriptionId: String, password: String) {
+        if (subscriptionId.isBlank() || password.isBlank()) return
+        val sub = decodeSubscription(subscriptionId) ?: return
+        if (sub.password == password) return
+        sub.password = password
+        subStorage.encode(subscriptionId, JsonUtil.toJson(sub))
     }
 
     private fun groupLockKey(subscriptionId: String): String {

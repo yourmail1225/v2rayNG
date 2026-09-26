@@ -384,12 +384,20 @@ class MainViewModel(
             .map { it.profile.subscriptionId }
             .distinct()
             .associateWith { subscriptionId -> dataSource.decodeGroupLock(subscriptionId) }
+        val affiliations = servers.associate { it.guid to dataSource.decodeAffiliationInfo(it.guid) }
+        // Locked-package profiles share one subscription-wide data cap; sum the consumed
+        // bytes of every permanently locked profile in each subscription once per build.
+        val sharedLockedUsed = servers.asSequence()
+            .filter { affiliations[it.guid]?.persistentLock == true }
+            .groupBy({ it.profile.subscriptionId }, { affiliations[it.guid]?.usedBytes ?: 0L })
+            .mapValues { it.value.sum() }
         return servers.map { server ->
             buildServerRowUiModel(
                 server = server,
                 subscriptionRemarks = subscriptionRemarks[server.profile.subscriptionId].orEmpty(),
-                affiliation = dataSource.decodeAffiliationInfo(server.guid),
+                affiliation = affiliations[server.guid],
                 groupLock = groupLocks[server.profile.subscriptionId],
+                sharedLockedUsedBytes = sharedLockedUsed[server.profile.subscriptionId] ?: 0L,
             )
         }
     }

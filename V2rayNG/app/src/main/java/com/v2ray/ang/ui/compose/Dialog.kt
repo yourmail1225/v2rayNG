@@ -26,19 +26,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.v2ray.ang.R
+import com.v2ray.ang.extension.toast
 
 @Composable
 fun ConfirmDialog(
@@ -122,7 +128,8 @@ fun InputDialog(
     confirmText: String,
     dismissText: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    message: String? = null
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -132,6 +139,9 @@ fun InputDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (message != null) {
+                    Text(message)
+                }
                 fields.forEachIndexed { index, field ->
                     OutlinedTextField(
                         value = field.value,
@@ -161,6 +171,49 @@ fun InputDialog(
             TextButton(onClick = onDismiss) { Text(dismissText) }
         },
         containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+/**
+ * Asks for a password before a protected action, e.g. changing or removing a
+ * subscription that shipped one in its locked package. The correct password is
+ * verified through [verify]; a wrong answer shows a toast and keeps the dialog open.
+ */
+@Composable
+fun PasswordVerifyDialog(
+    title: String,
+    message: String? = null,
+    verify: (String) -> Boolean,
+    onVerified: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var input by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    LaunchedEffect(error) {
+        if (error) {
+            context.toast(context.getString(R.string.sub_password_incorrect))
+            error = false
+        }
+    }
+    InputDialog(
+        title = title,
+        message = message,
+        fields = listOf(
+            InputField(
+                label = context.getString(R.string.sub_setting_password),
+                value = input,
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+        ),
+        onFieldChange = { _, value -> input = value; error = false },
+        confirmText = context.getString(R.string.action_apply),
+        dismissText = context.getString(R.string.action_cancel),
+        onConfirm = {
+            if (verify(input)) onVerified() else error = true
+        },
+        onDismiss = onDismiss
     )
 }
 

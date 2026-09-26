@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">سرآیندا درخواست (قالوو JSON)</string>
     <string name="sub_setting_filter">فیلتر نیشتنا وا regex</string>
+    <string name="sub_setting_password">رزم اشتراک</string>
+    <string name="sub_password_prompt_title">رزم اشتراک را وارد کاڑیت</string>
+    <string name="sub_password_change_message">برای تأیید تغییرات، رزم اشتراک را وارد بکیت.</string>
+    <string name="sub_password_delete_message">برای حذف ای اشتراک، رزم اشتراک را وارد بکیت.</string>
+    <string name="sub_password_incorrect">رزم اشتباهه.</string>
     <string name="sub_setting_enable">ره وندن ورۊ کردن</string>
     <string name="sub_auto_update">ره وندن ورۊ کردن خوتکار</string>
     <string name="sub_allow_insecure_url">موجاز کردن نشۊوی HTTP نا ٱمن</string>

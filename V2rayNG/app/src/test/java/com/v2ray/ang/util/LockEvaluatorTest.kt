@@ -293,4 +293,59 @@ class LockEvaluatorTest {
         )
         assertTrue(decision is LockEvaluator.Decision.Allow)
     }
+
+    @Test
+    fun evaluateServerPermanentLockAcceptsSharedUsedBytes() {
+        // Persistent-lock profiles (imported from a locked package) enforce the whole
+        // subscription's consumed bytes, even when the profile's own counter is low.
+        val denied = LockEvaluator.evaluateServer(
+            groupLock = null,
+            affiliation = ServerAffiliationInfo(
+                locked = false,
+                persistentLock = true,
+                dataLimitBytes = 100,
+                usedBytes = 5,
+            ),
+            nowEpochMinute = 0,
+            currentUsedBytes = 150,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+        assertEquals(
+            LockEvaluator.DeniedReason.DATA_LIMIT_REACHED,
+            (denied as LockEvaluator.Decision.Denied).reason
+        )
+        assertEquals(LockEvaluator.DeniedScope.PROFILE, denied.scope)
+    }
+
+    @Test
+    fun evaluateServerPermanentLockBelowSharedSumIsAllowed() {
+        val decision = LockEvaluator.evaluateServer(
+            groupLock = null,
+            affiliation = ServerAffiliationInfo(
+                locked = false,
+                persistentLock = true,
+                dataLimitBytes = 100,
+                usedBytes = 5,
+            ),
+            nowEpochMinute = 0,
+            currentUsedBytes = 99,
+        )
+        assertTrue(decision is LockEvaluator.Decision.Allow)
+    }
+
+    @Test
+    fun evaluateServerDefaultsToAffiliationCounter() {
+        // Existing callers keep per-profile semantics when no shared counter is passed.
+        val denied = LockEvaluator.evaluateServer(
+            groupLock = null,
+            affiliation = ServerAffiliationInfo(
+                locked = false,
+                persistentLock = true,
+                dataLimitBytes = 100,
+                usedBytes = 120,
+            ),
+            nowEpochMinute = 0,
+        )
+        assertTrue(denied is LockEvaluator.Decision.Denied)
+    }
 }

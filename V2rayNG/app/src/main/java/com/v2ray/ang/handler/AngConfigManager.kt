@@ -222,6 +222,7 @@ object AngConfigManager {
         return try {
             val pending = mutableListOf<ParsedProfile>()
             var importText = server
+            var packagePassword = ""
             if (server != null) {
                 val lockedParsed = LockedPackage.parse(server)
                 if (lockedParsed.entries.isNotEmpty()) {
@@ -230,6 +231,7 @@ object AngConfigManager {
                     }
                     importText = lockedParsed.remaining
                 }
+                packagePassword = lockedParsed.password
             }
 
             // OpenVPN .ovpn auto-detection & import
@@ -253,6 +255,12 @@ object AngConfigManager {
 
             if (pending.isNotEmpty()) {
                 commitProfiles(pending, subid, append)
+            }
+
+            // A password shipped in the locked package protects the subscription from
+            // being changed or removed without it; store it on the owning subscription.
+            if (packagePassword.isNotEmpty() && subid.isNotBlank()) {
+                MmkvManager.applySubscriptionPassword(subid, packagePassword)
             }
 
             var countSub = parseBatchSubscription(importText)
@@ -807,6 +815,13 @@ object AngConfigManager {
             if (count > 0) {
                 it.subscription.lastUpdated = System.currentTimeMillis()
                 MmkvManager.encodeSubscription(it.guid, it.subscription)
+                // A password shipped by a locked-package row protects the subscription
+                // from being changed or removed without it. Re-parse only for the
+                // password; profile parsing already happened in parseConfigViaSub.
+                val lockedParsed = LockedPackage.parse(configText)
+                if (lockedParsed.password.isNotEmpty()) {
+                    MmkvManager.applySubscriptionPassword(it.guid, lockedParsed.password)
+                }
                 LogUtil.i(AppConfig.TAG, "Subscription updated: ${it.subscription.remarks}, $count configs")
                 return SubscriptionUpdateResult(
                     configCount = count,

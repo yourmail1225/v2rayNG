@@ -335,6 +335,11 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">Request Headers (JSON format)</string>
     <string name="sub_setting_filter">Remarks filter (regular expression)</string>
+    <string name="sub_setting_password">Subscription password</string>
+    <string name="sub_password_prompt_title">Enter subscription password</string>
+    <string name="sub_password_change_message">Enter the subscription password to confirm changes.</string>
+    <string name="sub_password_delete_message">Enter the subscription password to remove this subscription.</string>
+    <string name="sub_password_incorrect">Incorrect password.</string>
     <string name="sub_setting_enable">Enable update</string>
     <string name="sub_auto_update">Enable automatic update</string>
     <string name="sub_allow_insecure_url">Allow insecure HTTP address</string>

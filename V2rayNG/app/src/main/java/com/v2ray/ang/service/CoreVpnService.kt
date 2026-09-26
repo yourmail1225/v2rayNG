@@ -88,9 +88,16 @@ class CoreVpnService : VpnService(), ServiceControl {
         val mainConfig = mainGuid?.let { MmkvManager.decodeServerConfig(it) }
         val denied = mainGuid?.let { guid ->
             mainConfig?.let { config ->
+                val affiliation = MmkvManager.decodeServerAffiliationInfo(guid)
+                val subscriptionUsed = if (affiliation?.persistentLock == true) {
+                    MmkvManager.getSubscriptionUsedBytes(config.subscriptionId)
+                } else {
+                    affiliation?.usedBytes ?: 0L
+                }
                 LockEvaluator.evaluateServer(
                     MmkvManager.decodeGroupLock(config.subscriptionId),
-                    MmkvManager.decodeServerAffiliationInfo(guid)
+                    affiliation,
+                    currentUsedBytes = subscriptionUsed,
                 ) as? LockEvaluator.Decision.Denied
             }
         }

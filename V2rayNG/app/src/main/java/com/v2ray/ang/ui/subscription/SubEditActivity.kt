@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import com.v2ray.ang.ui.compose.DeleteConfirmDialog
 import com.v2ray.ang.ui.compose.FormDropdownField
 import com.v2ray.ang.ui.compose.FormTextField
 import com.v2ray.ang.ui.compose.NavigationBarsSpacer
+import com.v2ray.ang.ui.compose.PasswordVerifyDialog
 import com.v2ray.ang.ui.compose.SettingsSwitchItem
 import com.v2ray.ang.ui.compose.verticalScrollbar
 import com.v2ray.ang.util.Utils
@@ -73,7 +75,8 @@ class SubEditActivity : BaseComponentActivity() {
             profileSuggestions = suggestions,
             onBackClick = { finish() },
             onSave = { saveServer(it) },
-            onDelete = { deleteServer() }
+            onDelete = { deleteServer() },
+            verifyPassword = { input -> input.isNotEmpty() && input == subItem.password }
         )
     }
 
@@ -128,7 +131,8 @@ fun SubEditScreen(
     profileSuggestions: List<String>,
     onBackClick: () -> Unit,
     onSave: (SubscriptionItem) -> Boolean,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    verifyPassword: (String) -> Boolean
 ) {
     //val context = LocalContext.current
     var remarks by rememberSaveable { mutableStateOf(initial.remarks.orEmpty()) }
@@ -142,10 +146,17 @@ fun SubEditScreen(
     var allowInsecureUrl by rememberSaveable { mutableStateOf(initial.allowInsecureUrl) }
     var prevProfile by rememberSaveable { mutableStateOf(initial.prevProfile ?: "") }
     var nextProfile by rememberSaveable { mutableStateOf(initial.nextProfile ?: "") }
+    var password by rememberSaveable { mutableStateOf(initial.password) }
 
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
+    var showPasswordPrompt by remember { mutableStateOf(false) }
+    var passwordPromptMessage by remember { mutableStateOf(R.string.sub_password_change_message) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val confirmRemove = MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, false)
     val scrollState = rememberScrollState()
+    // A subscription that shipped a password in its locked package must ask for it
+    // before any change or removal goes through.
+    val passwordProtected = initial.password.isNotEmpty()
 
     fun buildSubItem(): SubscriptionItem {
         val subItem = MmkvManager.decodeSubscription(editSubId) ?: SubscriptionItem()
@@ -160,7 +171,32 @@ fun SubEditScreen(
         subItem.prevProfile = prevProfile
         subItem.nextProfile = nextProfile
         subItem.allowInsecureUrl = allowInsecureUrl
+        subItem.password = password
         return subItem
+    }
+
+    fun requestSave() {
+        if (!passwordProtected) {
+            onSave(buildSubItem())
+        } else {
+            pendingAction = { onSave(buildSubItem()) }
+            passwordPromptMessage = R.string.sub_password_change_message
+            showPasswordPrompt = true
+        }
+    }
+
+    fun requestDelete() {
+        if (passwordProtected) {
+            pendingAction = {
+                if (confirmRemove) showDeleteConfirm = true else onDelete()
+            }
+            passwordPromptMessage = R.string.sub_password_delete_message
+            showPasswordPrompt = true
+        } else if (confirmRemove) {
+            showDeleteConfirm = true
+        } else {
+            onDelete()
+        }
     }
 
     Scaffold(
@@ -171,13 +207,11 @@ fun SubEditScreen(
                 onBackClick = onBackClick,
                 actions = {
                     if (editSubId.isNotEmpty()) {
-                        IconButton(onClick = {
-                            if (confirmRemove) showDeleteConfirm = true else onDelete()
-                        }) {
+                        IconButton(onClick = { requestDelete() }) {
                             Icon(painterResource(R.drawable.ic_delete_24dp), contentDescription = stringResource(R.string.acc_delete))
                         }
                     }
-                    IconButton(onClick = { buildSubItem()?.let { onSave(it) } }) {
+                    IconButton(onClick = { requestSave() }) {
                         Icon(painterResource(R.drawable.ic_fab_check), contentDescription = stringResource(R.string.acc_save))
                     }
                 }
@@ -197,6 +231,7 @@ fun SubEditScreen(
         ) {
             FormTextField(stringResource(R.string.sub_setting_remarks), remarks, { remarks = it })
             FormTextField(stringResource(R.string.sub_setting_url), url, { url = it })
+            FormTextField(stringResource(R.string.sub_setting_password), password, { password = it })
             FormTextField(stringResource(R.string.sub_setting_user_agent), userAgent, { userAgent = it })
             FormTextField(stringResource(R.string.sub_setting_request_headers), requestHeaders, { requestHeaders = it })
             FormTextField(stringResource(R.string.sub_setting_filter), filter, { filter = it })
@@ -249,6 +284,23 @@ fun SubEditScreen(
             message = stringResource(R.string.confirm_delete_subscription_group),
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false }
+        )
+    }
+
+    if (showPasswordPrompt) {
+        PasswordVerifyDialog(
+            title = stringResource(R.string.sub_password_prompt_title),
+            message = stringResource(passwordPromptMessage),
+            verify = verifyPassword,
+            onVerified = {
+                showPasswordPrompt = false
+                pendingAction?.invoke()
+                pendingAction = null
+            },
+            onDismiss = {
+                showPasswordPrompt = false
+                pendingAction = null
+            }
         )
     }
 }

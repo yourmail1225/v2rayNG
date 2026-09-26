@@ -7,12 +7,15 @@ import com.google.gson.JsonParser
 /**
  * Serialization for locked-profile packages.
  *
- * The package is a text blob with a header/footer marker and a JSON-serialized list of
- * entries in between, so multi-line raw profiles (OpenVPN) survive a round trip. Each
- * entry carries the config text plus the lock conditions (expiry moment and data limit)
- * applied on the originating device, so importing re-applies both the profile and its
- * lock settings under a permanent lock. Import detects the markers; any surrounding text
- * outside the markers is imported normally with no lock applied.
+ * The package is a text blob with a header/footer marker and JSON in between, so
+ * multi-line raw profiles (OpenVPN) survive a round trip. Two payload layouts exist:
+ * the legacy array form (per-entry config text plus lock conditions) and the object
+ * form that carries one shared quota for the whole package plus an optional password:
+ * `{"password": "...", "expiryEpochMinute": ..., "dataLimitBytes": ...,
+ * "entries": [{"content": "..."}]}`. Package-level values override the per-entry ones,
+ * so every profile imported from one package inherits the same expiry and data limit.
+ * Import detects the markers; any surrounding text outside the markers is imported
+ * normally with no lock applied.
  */
 object LockedPackage {
     const val HEADER = "#V2RAYNG-LOCK-PACKAGE-BEGIN#"
@@ -24,7 +27,11 @@ object LockedPackage {
         val dataLimitBytes: Long = 0L,
     )
 
-    data class Parsed(val entries: List<LockedEntry>, val remaining: String)
+    data class Parsed(
+        val entries: List<LockedEntry>,
+        val remaining: String,
+        val password: String = "",
+    )
 
     fun encode(entries: List<LockedEntry>): String {
         if (entries.isEmpty()) return ""
@@ -51,23 +58,49 @@ object LockedPackage {
             }
         }
 
-        return Parsed(entries = parseEntries(inBlock.toString()), remaining = remaining.toString())
+        val (entries, password) = parseBlock(inBlock.toString())
+        return Parsed(entries = entries, remaining = remaining.toString(), password = password)
     }
 
     /**
-     * Reads a locked-package payload. Older releases stored a plain array of config strings;
-     * current releases store an array of entry objects that also carry the lock conditions.
-     * The layout is detected from parsed JSON without logging, because a block that is absent,
-     * legacy-layout, or not JSON at all is the ordinary "pass it through as surrounding text"
-     * case rather than a fault, and plain JVM unit tests have no android.util.Log to report to.
+     * Reads a locked-package payload. Older releases stored a plain array of config
+     * strings; newer array releases store entry objects carrying their own lock
+     * conditions; the current object form adds a single shared quota and a password.
+     * The layout is detected from parsed JSON without logging, because a block that is
+     * absent, legacy-layout, or not JSON at all is the ordinary "pass it through as
+     * surrounding text" case rather than a fault, and plain JVM unit tests have no
+     * android.util.Log to report to.
      */
-    private fun parseEntries(json: String): List<LockedEntry> {
-        if (json.isBlank()) return emptyList()
+    private fun parseBlock(json: String): Pair<List<LockedEntry>, String> {
+        if (json.isBlank()) return emptyList() to ""
         return try {
-            parseEntries(JsonParser.parseString(json).asJsonArray)
+            val element = JsonParser.parseString(json)
+            when {
+                element.isJsonArray -> parseEntries(element.asJsonArray) to ""
+                element.isJsonObject -> parseObject(element.asJsonObject)
+                else -> emptyList() to ""
+            }
         } catch (e: Exception) {
+            emptyList() to ""
+        }
+    }
+
+    private fun parseObject(obj: JsonObject): Pair<List<LockedEntry>, String> {
+        val password = obj.lockString("password")
+        val sharedExpiry = obj.lockLong("expiryEpochMinute")
+        val sharedLimit = obj.lockLong("dataLimitBytes")
+        val entriesElement = obj.get("entries")
+        val entries = if (entriesElement != null && entriesElement.isJsonArray) {
+            parseEntries(entriesElement.asJsonArray).map { entry ->
+                entry.copy(
+                    expiryEpochMinute = if (sharedExpiry != 0L) sharedExpiry else entry.expiryEpochMinute,
+                    dataLimitBytes = if (sharedLimit != 0L) sharedLimit else entry.dataLimitBytes,
+                )
+            }
+        } else {
             emptyList()
         }
+        return entries to password
     }
 
     private fun parseEntries(array: JsonArray): List<LockedEntry> =
