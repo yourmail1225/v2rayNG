@@ -220,19 +220,13 @@ object AngConfigManager {
      */
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
-            var lockedCount = 0
+            val pending = mutableListOf<ParsedProfile>()
             var importText = server
             if (server != null) {
                 val lockedParsed = LockedPackage.parse(server)
                 if (lockedParsed.entries.isNotEmpty()) {
-                    lockedCount = lockedParsed.entries.sumOf { entry ->
-                        importLockedConfigContent(
-                            content = entry.content,
-                            subid = subid,
-                            append = append,
-                            expiryEpochMinute = entry.expiryEpochMinute,
-                            dataLimitBytes = entry.dataLimitBytes,
-                        )
+                    lockedParsed.entries.forEach { entry ->
+                        parseLockedEntry(entry, subid, pending)
                     }
                     importText = lockedParsed.remaining
                 }
@@ -245,20 +239,20 @@ object AngConfigManager {
                     subscriptionId = subid,
                     remarks = "OpenVPN",
                 )
-                commitProfiles(
-                    configs = listOf(ParsedProfile(profile = profile, rawConfig = importText)),
-                    subid = subid,
-                    append = append,
-                )
-                return lockedCount + 1 to 0
+                pending.add(ParsedProfile(profile = profile, rawConfig = importText))
+                importText = ""
             }
 
-            var count = parseBatchConfig(Utils.decode(importText), subid, append)
+            var count = parseBatchConfig(Utils.decode(importText), subid).also { pending.addAll(it) }.size
             if (count <= 0) {
-                count = parseBatchConfig(importText, subid, append)
+                count = parseBatchConfig(importText, subid).also { pending.addAll(it) }.size
             }
             if (count <= 0) {
-                count = parseCustomConfigServer(importText, subid, append)
+                count = parseCustomConfigServer(importText, subid).also { pending.addAll(it) }.size
+            }
+
+            if (pending.isNotEmpty()) {
+                commitProfiles(pending, subid, append)
             }
 
             var countSub = parseBatchSubscription(importText)
@@ -269,7 +263,7 @@ object AngConfigManager {
                 updateConfigViaSubAll()
             }
 
-            lockedCount + count to countSub
+            pending.size to countSub
         } catch (e: ProfileStorageException) {
             LogUtil.e(AppConfig.TAG, "Failed to store imported profiles", e)
             0 to 0
@@ -277,54 +271,67 @@ object AngConfigManager {
     }
 
     /**
-     * Imports a single locked-package entry with the lock state preserved.
+     * Appends the profiles of one locked-package entry to [out] without persisting.
      *
      * The entry's lock conditions (expiry moment and data limit) are stamped on the
-     * imported profiles so the recipient inherits the sharer's lock settings.
+     * parsed profiles so the recipient inherits the sharer's lock settings. Callers
+     * accumulate every entry of a package and commit the batch once, so a multi-entry
+     * package survives a replace-style save.
      *
-     * @param content The config text (a shared URI line or a full OpenVPN file).
+     * @param entry The locked-package entry.
      * @param subid The subscription ID.
-     * @param append Whether to append the configuration.
-     * @param expiryEpochMinute The lock expiry wall-clock minute to apply, 0 for none.
-     * @param dataLimitBytes The lock data-volume limit to apply, 0 for none.
-     * @return The number of profiles imported.
+     * @param out The accumulator for parsed profiles.
+     * @return The number of profiles appended.
      */
-    private fun importLockedConfigContent(
-        content: String,
+    private fun parseLockedEntry(
+        entry: LockedPackage.LockedEntry,
         subid: String,
-        append: Boolean,
-        expiryEpochMinute: Long = 0L,
-        dataLimitBytes: Long = 0L,
+        out: MutableList<ParsedProfile>,
     ): Int {
-        if (content.isOpenVpnConfig()) {
+        if (entry.content.isOpenVpnConfig()) {
             val profile = ProfileItem(
                 configType = EConfigType.OPENVPN,
                 subscriptionId = subid,
                 remarks = "OpenVPN",
             )
-            commitProfiles(
-                configs = listOf(
-                    ParsedProfile(
-                        profile = profile,
-                        rawConfig = content,
-                        locked = true,
-                        expiryEpochMinute = expiryEpochMinute,
-                        dataLimitBytes = dataLimitBytes,
-                    )
-                ),
-                subid = subid,
-                append = append,
+            out.add(
+                ParsedProfile(
+                    profile = profile,
+                    rawConfig = entry.content,
+                    locked = true,
+                    expiryEpochMinute = entry.expiryEpochMinute,
+                    dataLimitBytes = entry.dataLimitBytes,
+                )
             )
             return 1
         }
-        var count = parseBatchConfig(Utils.decode(content), subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
-        if (count <= 0) {
-            count = parseBatchConfig(content, subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
+        var parsed = parseBatchConfig(
+            Utils.decode(entry.content),
+            subid,
+            locked = true,
+            expiryEpochMinute = entry.expiryEpochMinute,
+            dataLimitBytes = entry.dataLimitBytes,
+        )
+        if (parsed.isEmpty()) {
+            parsed = parseBatchConfig(
+                entry.content,
+                subid,
+                locked = true,
+                expiryEpochMinute = entry.expiryEpochMinute,
+                dataLimitBytes = entry.dataLimitBytes,
+            )
         }
-        if (count <= 0) {
-            count = parseCustomConfigServer(content, subid, append, locked = true, expiryEpochMinute = expiryEpochMinute, dataLimitBytes = dataLimitBytes)
+        if (parsed.isEmpty()) {
+            parsed = parseCustomConfigServer(
+                entry.content,
+                subid,
+                locked = true,
+                expiryEpochMinute = entry.expiryEpochMinute,
+                dataLimitBytes = entry.dataLimitBytes,
+            )
         }
-        return count
+        out.addAll(parsed)
+        return parsed.size
     }
 
     /**
@@ -497,24 +504,25 @@ object AngConfigManager {
     }
 
     /**
-     * Parses a batch of configurations.
+     * Parses a batch of configurations without persisting.
      *
      * @param servers The servers string.
      * @param subid The subscription ID.
-     * @param append Whether to append the configurations.
-     * @return The number of configurations parsed.
+     * @param locked Whether the parsed profiles are lock-imported.
+     * @param expiryEpochMinute The lock expiry wall-clock minute to apply, 0 for none.
+     * @param dataLimitBytes The lock data-volume limit to apply, 0 for none.
+     * @return The parsed profiles, or an empty list when nothing parsed.
      */
     private fun parseBatchConfig(
         servers: String?,
         subid: String,
-        append: Boolean,
         locked: Boolean = false,
         expiryEpochMinute: Long = 0L,
         dataLimitBytes: Long = 0L,
-    ): Int {
+    ): List<ParsedProfile> {
         try {
             if (servers == null) {
-                return 0
+                return emptyList()
             }
             val subItem = MmkvManager.decodeSubscription(subid)
 
@@ -539,7 +547,7 @@ object AngConfigManager {
             val v2raynConfigs = V2rayNFmt.parse(v2raynLines, subid)
             val allConfigs = v2raynConfigs + configs
 
-            val parsedProfiles = allConfigs.map { parsed ->
+            return allConfigs.map { parsed ->
                 ParsedProfile(
                     profile = parsed,
                     locked = locked,
@@ -547,22 +555,10 @@ object AngConfigManager {
                     dataLimitBytes = dataLimitBytes,
                 )
             }
-
-            if (parsedProfiles.isNotEmpty()) {
-                commitProfiles(
-                    configs = parsedProfiles,
-                    subid = subid,
-                    append = append,
-                )
-            }
-
-            return parsedProfiles.size
-        } catch (e: ProfileStorageException) {
-            throw e
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to parse batch config", e)
         }
-        return 0
+        return emptyList()
     }
 
     /**
@@ -605,23 +601,24 @@ object AngConfigManager {
     }
 
     /**
-     * Parses a custom configuration server.
+     * Parses a custom configuration server without persisting.
      *
      * @param server The server string.
      * @param subid The subscription ID.
-     * @param append Whether to append the configurations.
-     * @return The number of configurations parsed.
+     * @param locked Whether the parsed profiles are lock-imported.
+     * @param expiryEpochMinute The lock expiry wall-clock minute to apply, 0 for none.
+     * @param dataLimitBytes The lock data-volume limit to apply, 0 for none.
+     * @return The parsed profiles, or an empty list when nothing parsed.
      */
     private fun parseCustomConfigServer(
         server: String?,
         subid: String,
-        append: Boolean,
         locked: Boolean = false,
         expiryEpochMinute: Long = 0L,
         dataLimitBytes: Long = 0L,
-    ): Int {
+    ): List<ParsedProfile> {
         if (server == null) {
-            return 0
+            return emptyList()
         }
         if (server.contains("inbounds")
             && server.contains("outbounds")
@@ -632,7 +629,7 @@ object AngConfigManager {
                     JsonUtil.fromJson(server, Array<Any>::class.java) ?: arrayOf()
 
                 if (serverList.isNotEmpty()) {
-                    val configs = serverList.reversed().map { srv ->
+                    return serverList.reversed().map { srv ->
                         val config = CustomFmt.parse(JsonUtil.toJson(srv))
                         config.subscriptionId = subid
                         config.description = generateDescription(config)
@@ -644,11 +641,7 @@ object AngConfigManager {
                             dataLimitBytes = dataLimitBytes,
                         )
                     }
-                    commitProfiles(configs, subid, append)
-                    return configs.size
                 }
-            } catch (e: ProfileStorageException) {
-                throw e
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.TAG, "Failed to parse custom config server JSON array", e)
             }
@@ -658,37 +651,23 @@ object AngConfigManager {
                 val config = CustomFmt.parse(server)
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
-                commitProfiles(
-                    configs = listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes)),
-                    subid = subid,
-                    append = append,
-                )
-                return 1
-            } catch (e: ProfileStorageException) {
-                throw e
+                return listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes))
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.TAG, "Failed to parse custom config server as single config", e)
             }
-            return 0
+            return emptyList()
         } else if (server.startsWith("[Interface]") && server.contains("[Peer]")) {
             try {
                 val config = WireguardFmt.parseWireguardConfFile(server)
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
-                commitProfiles(
-                    configs = listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes)),
-                    subid = subid,
-                    append = append,
-                )
-                return 1
-            } catch (e: ProfileStorageException) {
-                throw e
+                return listOf(ParsedProfile(config, server, locked, expiryEpochMinute, dataLimitBytes))
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.TAG, "Failed to parse WireGuard config file", e)
             }
-            return 0
+            return emptyList()
         } else {
-            return 0
+            return emptyList()
         }
     }
 
@@ -887,32 +866,29 @@ object AngConfigManager {
      * @return The number of configurations parsed.
      */
     private fun parseConfigViaSub(server: String?, subid: String, append: Boolean): Int {
-        var lockedCount = 0
+        val pending = mutableListOf<ParsedProfile>()
         var importText = server
         if (server != null) {
             val lockedParsed = LockedPackage.parse(server)
             if (lockedParsed.entries.isNotEmpty()) {
-                lockedCount = lockedParsed.entries.sumOf { entry ->
-                    importLockedConfigContent(
-                        content = entry.content,
-                        subid = subid,
-                        append = append,
-                        expiryEpochMinute = entry.expiryEpochMinute,
-                        dataLimitBytes = entry.dataLimitBytes,
-                    )
+                lockedParsed.entries.forEach { entry ->
+                    parseLockedEntry(entry, subid, pending)
                 }
                 importText = lockedParsed.remaining
             }
         }
 
-        var count = parseBatchConfig(Utils.decode(importText), subid, append)
+        var count = parseBatchConfig(Utils.decode(importText), subid).also { pending.addAll(it) }.size
         if (count <= 0) {
-            count = parseBatchConfig(importText, subid, append)
+            count = parseBatchConfig(importText, subid).also { pending.addAll(it) }.size
         }
         if (count <= 0) {
-            count = parseCustomConfigServer(importText, subid, append)
+            count = parseCustomConfigServer(importText, subid).also { pending.addAll(it) }.size
         }
-        return lockedCount + count
+        if (pending.isNotEmpty()) {
+            commitProfiles(pending, subid, append)
+        }
+        return pending.size
     }
 
     /**
