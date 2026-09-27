@@ -115,7 +115,9 @@ fun SubSettingScreen(
     val subscriptions by viewModel.subsFlow.collectAsStateWithLifecycle()
     var showUpdateDialog by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<String?>(null) }
-    var passwordTarget by remember { mutableStateOf<String?>(null) }
+    var passwordToVerify by remember { mutableStateOf("") }
+    var passwordPromptMessage by remember { mutableStateOf(0) }
+    var passwordPromptAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val confirmRemove = MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, false)
 
     var shareTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -199,7 +201,15 @@ fun SubSettingScreen(
                                 Row {
                                     if (subCache.subscription.url.isNotEmpty()) {
                                         IconButton(onClick = {
-                                            shareTarget = Pair(subCache.guid, subCache.subscription.url)
+                                            if (subCache.subscription.password.isNotEmpty()) {
+                                                passwordToVerify = subCache.subscription.password
+                                                passwordPromptMessage = R.string.sub_password_share_message
+                                                passwordPromptAction = {
+                                                    shareTarget = Pair(subCache.guid, subCache.subscription.url)
+                                                }
+                                            } else {
+                                                shareTarget = Pair(subCache.guid, subCache.subscription.url)
+                                            }
                                         }) {
                                             Icon(
                                                 painter = painterResource(R.drawable.ic_share_24dp),
@@ -207,7 +217,15 @@ fun SubSettingScreen(
                                             )
                                         }
                                     }
-                                    IconButton(onClick = { onEditSub(subCache.guid) }) {
+                                    IconButton(onClick = {
+                                        if (subCache.subscription.password.isNotEmpty()) {
+                                            passwordToVerify = subCache.subscription.password
+                                            passwordPromptMessage = R.string.sub_password_change_message
+                                            passwordPromptAction = { onEditSub(subCache.guid) }
+                                        } else {
+                                            onEditSub(subCache.guid)
+                                        }
+                                    }) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_edit_24dp),
                                             contentDescription = stringResource(R.string.acc_edit)
@@ -215,7 +233,12 @@ fun SubSettingScreen(
                                     }
                                     IconButton(onClick = {
                                         if (subCache.subscription.password.isNotEmpty()) {
-                                            passwordTarget = subCache.guid
+                                            passwordToVerify = subCache.subscription.password
+                                            passwordPromptMessage = R.string.sub_password_delete_message
+                                            passwordPromptAction = {
+                                                if (confirmRemove) removeTarget = subCache.guid
+                                                else onRemoveSub(subCache.guid)
+                                            }
                                         } else if (confirmRemove) {
                                             removeTarget = subCache.guid
                                         } else {
@@ -286,22 +309,18 @@ fun SubSettingScreen(
         )
     }
 
-    if (passwordTarget != null) {
-        val target = subscriptions.firstOrNull { it.guid == passwordTarget }
-        if (target != null) {
-            PasswordVerifyDialog(
-                title = stringResource(R.string.sub_password_prompt_title),
-                message = stringResource(R.string.sub_password_delete_message),
-                verify = { input -> input.isNotEmpty() && input == target.subscription.password },
-                onVerified = {
-                    passwordTarget = null
-                    if (confirmRemove) removeTarget = target.guid else onRemoveSub(target.guid)
-                },
-                onDismiss = { passwordTarget = null }
-            )
-        } else {
-            passwordTarget = null
-        }
+    if (passwordPromptAction != null) {
+        PasswordVerifyDialog(
+            title = stringResource(R.string.sub_password_prompt_title),
+            message = stringResource(passwordPromptMessage),
+            verify = { input -> input.isNotEmpty() && input == passwordToVerify },
+            onVerified = {
+                val action = passwordPromptAction
+                passwordPromptAction = null
+                action?.invoke()
+            },
+            onDismiss = { passwordPromptAction = null }
+        )
     }
 
     if (showUpdateDialog) {
