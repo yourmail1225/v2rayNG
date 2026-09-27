@@ -122,6 +122,9 @@ class SubscriptionsViewModel(application: Application) : BaseViewModel(applicati
                         toast(getString(R.string.title_update_subscription_result, result.configCount, result.successCount, result.failureCount, result.skipCount))
                 }
                 reload()
+                if (result.configCount > 0) {
+                    SettingsChangeManager.makeSetupGroupTab()
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
