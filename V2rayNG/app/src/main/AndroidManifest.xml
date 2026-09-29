@@ -165,6 +165,10 @@
             android:windowSoftInputMode="stateUnchanged|adjustResize"
             android:exported="false" />
         <activity
+            android:name=".ui.activation.ActivationActivity"
+            android:windowSoftInputMode="stateUnchanged|adjustResize"
+            android:exported="false" />
+        <activity
             android:name=".ui.shortcut.ScScannerActivity"
             android:exported="false" />
         <activity

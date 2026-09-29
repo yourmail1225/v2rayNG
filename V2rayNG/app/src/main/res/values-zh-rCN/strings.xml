@@ -598,8 +598,8 @@
     <string name="lock_profile_enable">锁定此服务器</string>
     <string name="lock_profile_expired">您的余额已用完。</string>
     <string name="lock_profile_data_exceeded">您的余额已用完。</string>
-    <string name="profile_usage_data_label">数据限额</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">剩余流量</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">到期时间</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="other">剩余 %1$d 天</item>
@@ -609,4 +609,18 @@
     <string name="toast_save_success">已保存</string>
     <string name="toast_reset_success">用量已重置</string>
 
+    <string name="activation_title">激活</string>
+    <string name="activation_subtitle">请输入激活码以使用此应用。也支持管理员登录。</string>
+    <string name="activation_code_field">激活码（用户名）</string>
+    <string name="activation_config_field">面板配置 (Base64) — 可选</string>
+    <string name="activation_config_help">如果面板地址已更改，请在此粘贴收到的 Base64 码；留空 = 默认地址。</string>
+    <string name="activation_submit">激活</string>
+    <string name="activation_ongoing">正在验证…</string>
+    <string name="activation_success">已激活。</string>
+    <string name="activation_master_success">已以管理员身份登录。</string>
+    <string name="activation_imported">订阅已导入。</string>
+    <string name="activation_error_network">无法连接激活服务器。请检查网络后重试。</string>
+    <string name="activation_error_denied">激活码不被接受。请检查后重试。</string>
+    <string name="activation_error_limit">此激活码的设备数已达上限。</string>
+    <string name="activation_error_generic">激活失败。</string>
 </resources>

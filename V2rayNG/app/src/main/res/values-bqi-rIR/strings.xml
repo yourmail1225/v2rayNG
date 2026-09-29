@@ -600,8 +600,8 @@
     <string name="lock_profile_enable">قفل کردن ای سرور</string>
     <string name="lock_profile_expired">اعتبارت به پایان نرسیه</string>
     <string name="lock_profile_data_exceeded">اعتبارت به پایان نرسیه</string>
-    <string name="profile_usage_data_label">سهمیه حجم</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">حجم باقی‌مونده</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">انقضا</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="one">%1$d روز مونده</item>
@@ -612,4 +612,18 @@
     <string name="toast_save_success">ذخیره بی</string>
     <string name="toast_reset_success">مصرف بازنشانی بی</string>
 
+    <string name="activation_title">فعال‌سازی</string>
+    <string name="activation_subtitle">برای استفاده از ای برنامه کد اکتیو اَ وارد بوکونید. ورود مدیر اَم پشتیبانی بی.</string>
+    <string name="activation_code_field">کد فعال‌سازی (نام کاربری)</string>
+    <string name="activation_config_field">پیکربندی پنل (Base64) — اختیاری</string>
+    <string name="activation_config_help">اگر آدرس پنل دگس بی، کد Base64 ای که گرفتی اَ اینجا بچسبون؛ خالی = آدرس پیش‌فرض.</string>
+    <string name="activation_submit">فعال‌سازی</string>
+    <string name="activation_ongoing">دینگ اَم در حال بررسی…</string>
+    <string name="activation_success">فعال بی.</string>
+    <string name="activation_master_success">به‌عنوان مدیر وارد بیّی.</string>
+    <string name="activation_imported">اشتراک وارد بی.</string>
+    <string name="activation_error_network">ارتباط با سرور فعال‌سازی نتونسیم بگیریم. اینترنت و آدرس اَ چک بوکونین.</string>
+    <string name="activation_error_denied">کد فعال‌سازی قبول نبی. کد اَ چک و دگس بوکونین.</string>
+    <string name="activation_error_limit">سهمیه دستگاه برای ای کد پر بیّه.</string>
+    <string name="activation_error_generic">فعال‌سازی انجام نبی.</string>
 </resources>

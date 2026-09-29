@@ -600,8 +600,8 @@
     <string name="lock_profile_enable">Lock this profile</string>
     <string name="lock_profile_expired">Your credit has ended.</string>
     <string name="lock_profile_data_exceeded">Your credit has ended.</string>
-    <string name="profile_usage_data_label">Data limit</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">Data remaining</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">Expires</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="one">%1$d day left</item>
@@ -613,4 +613,18 @@
     <string name="toast_save_success">Saved</string>
     <string name="toast_reset_success">Usage reset</string>
 
+    <string name="activation_title">Activation</string>
+    <string name="activation_subtitle">Enter your activation code to use this app. Administrator sign-in is also supported.</string>
+    <string name="activation_code_field">Activation code (username)</string>
+    <string name="activation_config_field">Panel configuration (Base64) - optional</string>
+    <string name="activation_config_help">If the panel address changed, paste the Base64 code you received here. Leave empty to use the default address.</string>
+    <string name="activation_submit">Activate</string>
+    <string name="activation_ongoing">Checking activation…</string>
+    <string name="activation_success">Activated.</string>
+    <string name="activation_master_success">Signed in as administrator.</string>
+    <string name="activation_imported">Subscription imported.</string>
+    <string name="activation_error_network">Could not reach the activation server. Check the connection and try again.</string>
+    <string name="activation_error_denied">This activation code was not accepted. Check the code and try again.</string>
+    <string name="activation_error_limit">This code has reached its device limit.</string>
+    <string name="activation_error_generic">Activation failed.</string>
 </resources>

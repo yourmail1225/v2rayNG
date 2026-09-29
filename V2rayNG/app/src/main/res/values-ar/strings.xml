@@ -608,8 +608,8 @@
     <string name="lock_profile_enable">قفل هذا الخادم</string>
     <string name="lock_profile_expired">لقد انتهى رصيدك.</string>
     <string name="lock_profile_data_exceeded">لقد انتهى رصيدك.</string>
-    <string name="profile_usage_data_label">حد البيانات</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">البيانات المتبقية</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">ينتهي في</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="zero">متبقي %1$d يوم</item>
@@ -624,4 +624,18 @@
     <string name="toast_save_success">تم الحفظ</string>
     <string name="toast_reset_success">تمت إعادة تعيين الاستخدام</string>
 
+    <string name="activation_title">تفعيل</string>
+    <string name="activation_subtitle">أدخل رمز التفعيل لاستخدام هذا التطبيق. يتم دعم الدخول كمدير أيضًا.</string>
+    <string name="activation_code_field">رمز التفعيل (اسم المستخدم)</string>
+    <string name="activation_config_field">إعدادات اللوحة (Base64) — اختياري</string>
+    <string name="activation_config_help">إذا تغير عنوان اللوحة، الصق رمز Base64 الذي استلمته هنا؛ فارغ = العنوان الافتراضي.</string>
+    <string name="activation_submit">تفعيل</string>
+    <string name="activation_ongoing">جارٍ التحقق من التفعيل…</string>
+    <string name="activation_success">تم التفعيل.</string>
+    <string name="activation_master_success">تم الدخول كمدير.</string>
+    <string name="activation_imported">تم استيراد الاشتراك.</string>
+    <string name="activation_error_network">تعذر الوصول إلى خادم التفعيل. تحقق من الاتصال وحاول مجددًا.</string>
+    <string name="activation_error_denied">رمز التفعيل غير مقبول. تحقق منه وحاول مجددًا.</string>
+    <string name="activation_error_limit">بلغ هذا الرمز حد الأجهزة المسموح.</string>
+    <string name="activation_error_generic">فشل التفعيل.</string>
 </resources>

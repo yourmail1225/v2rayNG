@@ -53,6 +53,53 @@ internal fun dataUsageFraction(usedBytes: Long, dataLimitBytes: Long): Float? =
     if (dataLimitBytes > 0L) (usedBytes.toFloat() / dataLimitBytes.toFloat()).coerceIn(0f, 1f) else null
 
 /**
+ * Remaining share of a data limit, reversed so the bar depletes as data is consumed,
+ * or null when there is no limit to fill against.
+ */
+internal fun dataRemainingFraction(usedBytes: Long, dataLimitBytes: Long): Float? =
+    if (dataLimitBytes > 0L) {
+        ((dataLimitBytes - usedBytes).toFloat() / dataLimitBytes.toFloat()).coerceIn(0f, 1f)
+    } else {
+        null
+    }
+
+/**
+ * Whether the data quota is finished because the consumed bytes reached the limit.
+ */
+internal fun isDataFinished(usedBytes: Long, dataLimitBytes: Long): Boolean =
+    dataLimitBytes > 0L && usedBytes >= dataLimitBytes
+
+/**
+ * Whether the lock window is already over at [nowEpochMinute]. A missing expiry is
+ * never considered finished.
+ */
+internal fun isTimeFinished(expiryEpochMinute: Long, nowEpochMinute: Long): Boolean =
+    expiryEpochMinute > 0L && nowEpochMinute >= expiryEpochMinute
+
+private const val GIBIBYTE = 1_073_741_824L
+
+/**
+ * Formats a byte count as a GB figure with at most one decimal place, dropping the
+ * trailing `.0` for whole numbers (e.g. 1.2, 2, 0.5). The label and unit come from
+ * the caller's string resource so locales keep control of the suffix.
+ */
+internal fun gbString(bytes: Long): String {
+    if (bytes <= 0L) return "0"
+    if (bytes < GIBIBYTE / 10) return "0.1"
+    val tenths = bytes * 10L / GIBIBYTE
+    val whole = tenths / 10
+    val fraction = tenths % 10
+    return if (fraction == 0L) whole.toString() else "$whole.$fraction"
+}
+
+/**
+ * Remaining data after [usedBytes] of a [dataLimitBytes] quota, floored at zero and
+ * formatted for the "GB remaining" card value.
+ */
+internal fun remainingGbString(usedBytes: Long, dataLimitBytes: Long): String =
+    gbString(if (dataLimitBytes > usedBytes) dataLimitBytes - usedBytes else 0L)
+
+/**
  * Remaining share of the lock window [startEpochMinute, expiryEpochMinute] seen at
  * [nowEpochMinute], or null when no valid window exists.
  */

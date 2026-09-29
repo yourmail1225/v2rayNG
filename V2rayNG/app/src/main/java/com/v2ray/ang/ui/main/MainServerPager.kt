@@ -406,7 +406,7 @@ private fun ServerListItem(
                     }
                     IconButton(onClick = { actions.lock(row.guid) }, Modifier.size(36.dp)) {
                         Icon(
-                            painterResource(R.drawable.ic_lock_24dp),
+                            painterResource(R.drawable.ic_globe_24dp),
                             stringResource(R.string.lock_profile),
                             Modifier.size(24.dp)
                         )
@@ -452,9 +452,10 @@ private fun ServerListItem(
 }
 
 /**
- * Renders the two quota bars of a locked profile card: the consumed data share and
- * the remaining lock window. Both share the Material 3 secondary color already used
- * for the loading indicators, in single- and double-column layouts alike.
+ * Renders the two quota bars of a locked profile card: the remaining data share and
+ * the remaining lock window. Both show a countdown — the data bar depletes as bytes
+ * are consumed and turns red when the quota is finished, while the time bar depletes
+ * towards the expiry and turns red once it is over.
  */
 @Composable
 private fun LockUsageBars(usage: LockUsageUiModel) {
@@ -470,10 +471,10 @@ private fun LockUsageBars(usage: LockUsageUiModel) {
                 label = stringResource(R.string.profile_usage_data_label),
                 value = stringResource(
                     R.string.profile_usage_data_value,
-                    mbString(usage.usedBytes),
-                    mbString(usage.dataLimitBytes)
+                    remainingGbString(usage.usedBytes, usage.dataLimitBytes)
                 ),
-                progress = dataUsageFraction(usage.usedBytes, usage.dataLimitBytes) ?: 0f,
+                progress = dataRemainingFraction(usage.usedBytes, usage.dataLimitBytes) ?: 0f,
+                finished = isDataFinished(usage.usedBytes, usage.dataLimitBytes),
             )
         }
         if (usage.hasTimeLimit) {
@@ -490,27 +491,36 @@ private fun LockUsageBars(usage: LockUsageUiModel) {
                     usage.expiryEpochMinute,
                     usage.nowEpochMinute,
                 ) ?: 0f,
+                finished = isTimeFinished(usage.expiryEpochMinute, usage.nowEpochMinute),
             )
         }
     }
 }
 
 @Composable
-private fun QuotaBar(label: String, value: String, progress: Float) {
+private fun QuotaBar(label: String, value: String, progress: Float, finished: Boolean) {
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 label,
                 Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (finished) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 value,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (finished) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -519,18 +529,19 @@ private fun QuotaBar(label: String, value: String, progress: Float) {
             progress = { progress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp),
-            color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
+                .height(10.dp),
+            color = if (finished) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.secondary
+            },
+            trackColor = if (finished) {
+                MaterialTheme.colorScheme.error.copy(alpha = 0.24f)
+            } else {
+                MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f)
+            },
         )
     }
-}
-
-private const val MEGABYTE = 1_048_576L
-
-private fun mbString(bytes: Long): String {
-    val value = bytes / MEGABYTE
-    return if (value > 0L) value.toString() else "0"
 }
 
 internal suspend fun PagerState.navigateToPageOptimized(

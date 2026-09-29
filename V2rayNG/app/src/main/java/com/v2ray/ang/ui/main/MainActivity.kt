@@ -23,10 +23,12 @@ import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
+import com.v2ray.ang.handler.ActivationManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.ui.AboutActivity
+import com.v2ray.ang.ui.activation.ActivationActivity
 import com.v2ray.ang.ui.backup.BackupActivity
 import com.v2ray.ang.ui.base.HelperBaseComponentActivity
 import com.v2ray.ang.ui.checkupdate.CheckUpdateActivity
@@ -93,11 +95,40 @@ class MainActivity : HelperBaseComponentActivity() {
             if (restartService) LauncherManager.restartService(this)
         }
 
+    private val activationLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            activationLaunched = false
+            if (!ActivationManager.isActivated()) {
+                ensureActivation()
+                return@registerForActivityResult
+            }
+            mainViewModel.refreshUiSettings()
+            mainViewModel.onAction(MainAction.RefreshGroups)
+            reportActiveAsync()
+        }
+
+    private var activationLaunched = false
+
+    private fun ensureActivation() {
+        if (ActivationManager.isActivated() || activationLaunched) return
+        activationLaunched = true
+        activationLauncher.launch(Intent(this, ActivationActivity::class.java))
+    }
+
+    private fun reportActiveAsync() {
+        if (!ActivationManager.isActivated()) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            ActivationManager.reportActive()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mainViewModel.onAction(MainAction.Initialize)
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
+        ensureActivation()
+        reportActiveAsync()
     }
 
     @Composable

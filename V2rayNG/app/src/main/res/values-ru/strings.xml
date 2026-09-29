@@ -604,8 +604,8 @@
     <string name="lock_profile_enable">Заблокировать этот сервер</string>
     <string name="lock_profile_expired">Ваш лимит истёк.</string>
     <string name="lock_profile_data_exceeded">Ваш лимит истёк.</string>
-    <string name="profile_usage_data_label">Лимит данных</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">Осталось данных</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">Истекает</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="one">остался %1$d день</item>
@@ -618,4 +618,18 @@
     <string name="toast_save_success">Сохранено</string>
     <string name="toast_reset_success">Расход сброшен</string>
 
+    <string name="activation_title">Активация</string>
+    <string name="activation_subtitle">Введите код активации, чтобы использовать приложение. Вход администратора также поддерживается.</string>
+    <string name="activation_code_field">Код активации (имя пользователя)</string>
+    <string name="activation_config_field">Конфигурация панели (Base64) — необязательно</string>
+    <string name="activation_config_help">Если адрес панели изменился, вставьте полученный код Base64; пусто = адрес по умолчанию.</string>
+    <string name="activation_submit">Активировать</string>
+    <string name="activation_ongoing">Проверка активации…</string>
+    <string name="activation_success">Активировано.</string>
+    <string name="activation_master_success">Вы вошли как администратор.</string>
+    <string name="activation_imported">Подписка импортирована.</string>
+    <string name="activation_error_network">Не удалось связаться с сервером активации. Проверьте соединение и повторите.</string>
+    <string name="activation_error_denied">Код активации не принят. Проверьте код и повторите.</string>
+    <string name="activation_error_limit">Для этого кода достигнут лимит устройств.</string>
+    <string name="activation_error_generic">Не удалось активировать.</string>
 </resources>

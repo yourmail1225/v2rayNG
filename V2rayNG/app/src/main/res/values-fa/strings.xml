@@ -600,8 +600,8 @@
     <string name="lock_profile_enable">قفل کردن این پروفایل</string>
     <string name="lock_profile_expired">اعتبار شما به پایان رسیده است</string>
     <string name="lock_profile_data_exceeded">اعتبار شما به پایان رسیده است</string>
-    <string name="profile_usage_data_label">سقف حجم</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">حجم باقیمانده</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">انقضا</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="one">%1$d روز مانده</item>
@@ -612,4 +612,18 @@
     <string name="toast_save_success">ذخیره شد</string>
     <string name="toast_reset_success">مصرف بازنشانی شد</string>
 
+    <string name="activation_title">فعال‌سازی</string>
+    <string name="activation_subtitle">برای استفاده از این برنامه کد فعال‌سازی خود را وارد کنید. ورود مدیر نیز پشتیبانی می‌شود.</string>
+    <string name="activation_code_field">کد فعال‌سازی (نام کاربری)</string>
+    <string name="activation_config_field">پیکربندی پنل (Base64) — اختیاری</string>
+    <string name="activation_config_help">اگر آدرس پنل عوض شده، کد Base64 دریافتی را اینجا بچسبانید؛ خالی = آدرس پیش‌فرض.</string>
+    <string name="activation_submit">فعال‌سازی</string>
+    <string name="activation_ongoing">در حال بررسی فعال‌سازی…</string>
+    <string name="activation_success">فعال شد.</string>
+    <string name="activation_master_success">به‌عنوان مدیر وارد شدید.</string>
+    <string name="activation_imported">اشتراک وارد شد.</string>
+    <string name="activation_error_network">دسترسی به سرور فعال‌سازی ممکن نشد. اتصال را بررسی و دوباره تلاش کنید.</string>
+    <string name="activation_error_denied">کد فعال‌سازی پذیرفته نشد. کد را بررسی و دوباره تلاش کنید.</string>
+    <string name="activation_error_limit">سقف دستگاه برای این کد پر شده است.</string>
+    <string name="activation_error_generic">فعال‌سازی ناموفق بود.</string>
 </resources>

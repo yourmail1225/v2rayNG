@@ -315,4 +315,60 @@ class MainServerRowModelsTest {
         assertEquals(1L, remainingDays(expiryEpochMinute = 1540L, nowEpochMinute = 100L))
         assertEquals(2L, remainingDays(expiryEpochMinute = 2980L, nowEpochMinute = 100L))
     }
+
+    @Test
+    fun dataRemainingFractionIsNullWithoutLimit() {
+        assertNull(dataRemainingFraction(usedBytes = 10, dataLimitBytes = 0L))
+    }
+
+    @Test
+    fun dataRemainingFractionIsReversedRatio() {
+        assertEquals(1f, dataRemainingFraction(usedBytes = 0, dataLimitBytes = 100)!!, 0.0001f)
+        assertEquals(0.5f, dataRemainingFraction(usedBytes = 50, dataLimitBytes = 100)!!, 0.0001f)
+    }
+
+    @Test
+    fun dataRemainingFractionFloorsAtZero() {
+        assertEquals(0f, dataRemainingFraction(usedBytes = 100, dataLimitBytes = 100)!!, 0.0001f)
+        assertEquals(0f, dataRemainingFraction(usedBytes = 150, dataLimitBytes = 100)!!, 0.0001f)
+    }
+
+    @Test
+    fun dataAndTimeFinishedFlags() {
+        assertFalse(isDataFinished(usedBytes = 99, dataLimitBytes = 100))
+        assertTrue(isDataFinished(usedBytes = 100, dataLimitBytes = 100))
+        assertTrue(isDataFinished(usedBytes = 120, dataLimitBytes = 100))
+        assertFalse(isDataFinished(usedBytes = 0, dataLimitBytes = 0L))
+        assertFalse(isTimeFinished(expiryEpochMinute = 200L, nowEpochMinute = 199L))
+        assertTrue(isTimeFinished(expiryEpochMinute = 200L, nowEpochMinute = 200L))
+        assertTrue(isTimeFinished(expiryEpochMinute = 200L, nowEpochMinute = 250L))
+        assertFalse(isTimeFinished(expiryEpochMinute = 0L, nowEpochMinute = 250L))
+    }
+
+    @Test
+    fun gbStringFormatsWholeNumbersWithoutDecimal() {
+        assertEquals("0", gbString(0L))
+        assertEquals("0", gbString(-5L))
+        assertEquals("2", gbString(2 * 1_073_741_824L))
+    }
+
+    @Test
+    fun gbStringShowsOneDecimalPlace() {
+        assertEquals("1.2", gbString(1_288_490_188L))
+        assertEquals("0.5", gbString(536_870_912L))
+    }
+
+    @Test
+    fun gbStringFloorsTinyPositiveAmounts() {
+        assertEquals("0.1", gbString(100_000_000L))
+        assertEquals("0.1", gbString(1L))
+    }
+
+    @Test
+    fun remainingGbStringUsesLargerOfRemainingAndZero() {
+        assertEquals("50", remainingGbString(usedBytes = 50L, dataLimitBytes = 100L))
+        assertEquals("0", remainingGbString(usedBytes = 100L, dataLimitBytes = 100L))
+        assertEquals("0", remainingGbString(usedBytes = 120L, dataLimitBytes = 100L))
+        assertEquals("0", remainingGbString(usedBytes = 0L, dataLimitBytes = 0L))
+    }
 }

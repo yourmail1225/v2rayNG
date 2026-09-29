@@ -598,8 +598,8 @@
     <string name="lock_profile_enable">鎖定此伺服器</string>
     <string name="lock_profile_expired">您的餘額已用完。</string>
     <string name="lock_profile_data_exceeded">您的餘額已用完。</string>
-    <string name="profile_usage_data_label">資料上限</string>
-    <string name="profile_usage_data_value">%1$s / %2$s MB</string>
+    <string name="profile_usage_data_label">剩餘流量</string>
+    <string name="profile_usage_data_value">%1$s GB</string>
     <string name="profile_usage_time_label">到期時間</string>
     <plurals name="profile_usage_days_remaining">
         <item quantity="other">剩餘 %1$d 天</item>
@@ -609,4 +609,18 @@
     <string name="toast_save_success">已儲存</string>
     <string name="toast_reset_success">用量已重設</string>
 
+    <string name="activation_title">啟用</string>
+    <string name="activation_subtitle">請輸入啟用碼以使用此應用程式。也支援管理員登入。</string>
+    <string name="activation_code_field">啟用碼（使用者名稱）</string>
+    <string name="activation_config_field">面板設定 (Base64) — 選用</string>
+    <string name="activation_config_help">如果面板位址已變更，請在此貼上收到的 Base64 碼；留空 = 預設位址。</string>
+    <string name="activation_submit">啟用</string>
+    <string name="activation_ongoing">正在驗證…</string>
+    <string name="activation_success">已啟用。</string>
+    <string name="activation_master_success">已以管理員身分登入。</string>
+    <string name="activation_imported">訂閱已匯入。</string>
+    <string name="activation_error_network">無法連線啟用伺服器。請檢查連線後重試。</string>
+    <string name="activation_error_denied">啟用碼不被接受。請檢查後重試。</string>
+    <string name="activation_error_limit">此啟用碼的裝置數已達上限。</string>
+    <string name="activation_error_generic">啟用失敗。</string>
 </resources>
