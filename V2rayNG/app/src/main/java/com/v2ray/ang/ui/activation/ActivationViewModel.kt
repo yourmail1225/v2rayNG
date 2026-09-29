@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.activation
 
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.v2ray.ang.AngApplication
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.SubscriptionItem

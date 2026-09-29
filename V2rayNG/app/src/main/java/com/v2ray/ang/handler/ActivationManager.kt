@@ -80,7 +80,7 @@ object ActivationManager {
      * caller must import the returned subscription (if any) and then call
      * [markActivated].
      */
-    suspend fun activate(code: String, configCode: String?): ActivationOutcome = withContext(Dispatchers.IO) {
+    internal suspend fun activate(code: String, configCode: String?): ActivationOutcome = withContext(Dispatchers.IO) {
         if (code.isBlank()) {
             return@withContext ActivationOutcome.Error(ActivationErrorKind.DENIED)
         }
