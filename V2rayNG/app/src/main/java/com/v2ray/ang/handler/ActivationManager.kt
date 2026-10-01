@@ -18,6 +18,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.io.IOException
 import java.net.URLEncoder
 import java.time.Instant
@@ -271,17 +272,24 @@ object ActivationManager {
             .header("Accept", "application/vnd.github+json")
             .build()
         client.newCall(request).execute().use { response ->
-            if (response.code == 404) return null
-            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-            val obj = JsonParser.parseString(response.body?.string().orEmpty())
-                .takeIf { it.isJsonObject }?.asJsonObject ?: return null
-            val sha = obj.get("sha")?.asString ?: return null
-            val encoded = obj.get("content")?.asString?.replace("\n", "").orEmpty()
-            val rowText = runCatching {
-                String(ActivationCodec.decode(encoded), Charsets.UTF_8)
-            }.getOrNull() ?: return null
-            return RowSnapshot(rowText, sha, RowActivation.read(rowText))
+            when {
+                response.code == 404 -> null
+                !response.isSuccessful -> throw IOException("HTTP ${response.code}")
+                else -> rowSnapshotOf(response)
+            }
         }
+    }
+
+    /** Contents API response to a row file; the content is Base64 and may be wrapped. */
+    private fun rowSnapshotOf(response: Response): RowSnapshot? {
+        val obj = JsonParser.parseString(response.body?.string().orEmpty())
+            .takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val sha = obj.get("sha")?.asString ?: return null
+        val encoded = obj.get("content")?.asString?.replace("\n", "").orEmpty()
+        val rowText = runCatching {
+            String(ActivationCodec.decode(encoded), Charsets.UTF_8)
+        }.getOrNull() ?: return null
+        return RowSnapshot(rowText, sha, RowActivation.read(rowText))
     }
 
     /**
@@ -306,9 +314,11 @@ object ActivationManager {
             .put(body.toRequestBody(jsonMediaType))
             .build()
         client.newCall(request).execute().use { response ->
-            if (response.isSuccessful) return true
-            if (response.code == 409 || response.code == 422) return false
-            throw IOException("HTTP ${response.code}")
+            when {
+                response.isSuccessful -> true
+                response.code == 409 || response.code == 422 -> false
+                else -> throw IOException("HTTP ${response.code}")
+            }
         }
     }
 
