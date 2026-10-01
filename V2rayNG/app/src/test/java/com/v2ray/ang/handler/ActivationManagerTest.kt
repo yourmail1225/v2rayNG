@@ -1,15 +1,12 @@
 package com.v2ray.ang.handler
 
-import com.tencent.mmkv.MMKV
 import com.v2ray.ang.util.ActivationCodec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
-import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.whenever
 
@@ -73,20 +70,12 @@ class ActivationManagerTest {
 
     companion object {
         private const val KEY_SERVER = "pref_activation_server"
-        private val settings: MMKV = mock()
-        private val main: MMKV = mock()
-        private val subs: MMKV = mock()
+        private val settings get() = MmkvTestHandles.settings
 
         @BeforeClass
         @JvmStatic
         fun initializeHandles() {
-            mockStatic(MMKV::class.java).use {
-                it.`when`<MMKV> { MMKV.mmkvWithID("MAIN", MMKV.MULTI_PROCESS_MODE) }.thenReturn(main)
-                it.`when`<MMKV> { MMKV.mmkvWithID("SUB", MMKV.MULTI_PROCESS_MODE) }.thenReturn(subs)
-                it.`when`<MMKV> { MMKV.mmkvWithID("SETTING", MMKV.MULTI_PROCESS_MODE) }.thenReturn(settings)
-                MmkvManager.decodeSubscriptions()
-                MmkvManager.decodeSettingsString("test-initialize")
-            }
+            MmkvTestHandles.bind()
         }
     }
 }
