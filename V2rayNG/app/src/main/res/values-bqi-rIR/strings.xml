@@ -613,10 +613,8 @@
     <string name="toast_reset_success">مصرف بازنشانی بی</string>
 
     <string name="activation_title">فعال‌سازی</string>
-    <string name="activation_subtitle">برای استفاده از ای برنامه کد اکتیو اَ وارد بوکونید. ورود مدیر اَم پشتیبانی بی.</string>
     <string name="activation_code_field">کد فعال‌سازی (نام کاربری)</string>
     <string name="activation_config_field">پیکربندی پنل (Base64) — اختیاری</string>
-    <string name="activation_config_help">اگر آدرس پنل دگس بی، کد Base64 ای که گرفتی اَ اینجا بچسبون؛ خالی = آدرس پیش‌فرض.</string>
     <string name="activation_submit">فعال‌سازی</string>
     <string name="activation_ongoing">دینگ اَم در حال بررسی…</string>
     <string name="activation_success">فعال بی.</string>

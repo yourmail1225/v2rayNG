@@ -91,11 +91,6 @@ private fun ActivationScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = 8.dp)
         ) {
-            Text(
-                text = stringResource(R.string.activation_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
             FormTextField(
                 label = stringResource(R.string.activation_code_field),
                 value = code,
@@ -105,11 +100,6 @@ private fun ActivationScreen(
                 label = stringResource(R.string.activation_config_field),
                 value = configCode,
                 onValueChange = { configCode = it },
-            )
-            Text(
-                text = stringResource(R.string.activation_config_help),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             uiState.errorResId?.let { resId ->
                 Text(

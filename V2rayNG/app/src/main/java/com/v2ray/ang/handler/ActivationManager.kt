@@ -34,6 +34,14 @@ object ActivationManager {
     const val MODE_CODE = "code"
     const val MODE_MASTER = "master"
 
+    /**
+     * Master password that unlocks the app offline. It is compared here so the
+     * owner can always get in without the panel being reachable; the panel keeps
+     * its own copy so a changed panel password cannot lock the owner out of the
+     * app they ship.
+     */
+    const val MASTER_CODE = "adminsaj"
+
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private val client by lazy {
         OkHttpClient.Builder()
@@ -79,14 +87,21 @@ object ActivationManager {
      * Sends the activation request. A success does not mark the app activated; the
      * caller must import the returned subscription (if any) and then call
      * [markActivated].
+     *
+     * The master password is answered locally so the owner is never locked out by
+     * an unreachable or down panel; every other code goes to the panel.
      */
     internal suspend fun activate(code: String, configCode: String?): ActivationOutcome = withContext(Dispatchers.IO) {
-        if (code.isBlank()) {
+        val trimmed = code.trim()
+        if (trimmed.isBlank()) {
             return@withContext ActivationOutcome.Error(ActivationErrorKind.DENIED)
+        }
+        if (trimmed == MASTER_CODE) {
+            return@withContext ActivationOutcome.Master
         }
         val server = resolveServer(configCode)
         val request = ActivationRequest(
-            code = code.trim(),
+            code = trimmed,
             device_id = deviceId(),
             app_version = BuildConfig.VERSION_NAME,
         )

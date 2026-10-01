@@ -614,10 +614,8 @@
     <string name="toast_reset_success">Usage reset</string>
 
     <string name="activation_title">Activation</string>
-    <string name="activation_subtitle">Enter your activation code to use this app. Administrator sign-in is also supported.</string>
     <string name="activation_code_field">Activation code (username)</string>
     <string name="activation_config_field">Panel configuration (Base64) - optional</string>
-    <string name="activation_config_help">If the panel address changed, paste the Base64 code you received here. Leave empty to use the default address.</string>
     <string name="activation_submit">Activate</string>
     <string name="activation_ongoing">Checking activation…</string>
     <string name="activation_success">Activated.</string>

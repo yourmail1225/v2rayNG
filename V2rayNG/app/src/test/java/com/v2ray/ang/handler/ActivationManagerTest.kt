@@ -1,8 +1,11 @@
 package com.v2ray.ang.handler
 
 import com.v2ray.ang.util.ActivationCodec
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
@@ -66,6 +69,25 @@ class ActivationManagerTest {
     fun resolveServerKeepsDefaultWhenConfigBlank() {
         assertEquals(ActivationManager.DEFAULT_SERVER, ActivationManager.resolveServer(null))
         assertEquals(ActivationManager.DEFAULT_SERVER, settingsValues[ActivationManagerTest.KEY_SERVER])
+    }
+
+    @Test
+    fun masterCodeActivatesWithoutContactingThePanel() = runBlocking(Dispatchers.IO) {
+        val outcome = ActivationManager.activate("  ${ActivationManager.MASTER_CODE}  ", null)
+
+        assertTrue(outcome is ActivationOutcome.Master)
+        assertNull(
+            "a master unlock must not need a panel address",
+            settingsValues[ActivationManagerTest.KEY_SERVER]
+        )
+    }
+
+    @Test
+    fun blankCodeIsDeniedBeforeAnyPanelRequest() = runBlocking(Dispatchers.IO) {
+        val outcome = ActivationManager.activate("   ", null)
+
+        assertEquals(ActivationOutcome.Error(ActivationErrorKind.DENIED), outcome)
+        assertNull(settingsValues[ActivationManagerTest.KEY_SERVER])
     }
 
     companion object {

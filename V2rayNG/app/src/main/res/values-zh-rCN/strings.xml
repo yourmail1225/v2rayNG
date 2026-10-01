@@ -610,10 +610,8 @@
     <string name="toast_reset_success">用量已重置</string>
 
     <string name="activation_title">激活</string>
-    <string name="activation_subtitle">请输入激活码以使用此应用。也支持管理员登录。</string>
     <string name="activation_code_field">激活码（用户名）</string>
     <string name="activation_config_field">面板配置 (Base64) — 可选</string>
-    <string name="activation_config_help">如果面板地址已更改，请在此粘贴收到的 Base64 码；留空 = 默认地址。</string>
     <string name="activation_submit">激活</string>
     <string name="activation_ongoing">正在验证…</string>
     <string name="activation_success">已激活。</string>

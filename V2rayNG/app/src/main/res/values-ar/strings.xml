@@ -625,10 +625,8 @@
     <string name="toast_reset_success">تمت إعادة تعيين الاستخدام</string>
 
     <string name="activation_title">تفعيل</string>
-    <string name="activation_subtitle">أدخل رمز التفعيل لاستخدام هذا التطبيق. يتم دعم الدخول كمدير أيضًا.</string>
     <string name="activation_code_field">رمز التفعيل (اسم المستخدم)</string>
     <string name="activation_config_field">إعدادات اللوحة (Base64) — اختياري</string>
-    <string name="activation_config_help">إذا تغير عنوان اللوحة، الصق رمز Base64 الذي استلمته هنا؛ فارغ = العنوان الافتراضي.</string>
     <string name="activation_submit">تفعيل</string>
     <string name="activation_ongoing">جارٍ التحقق من التفعيل…</string>
     <string name="activation_success">تم التفعيل.</string>

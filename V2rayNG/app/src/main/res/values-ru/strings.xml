@@ -619,10 +619,8 @@
     <string name="toast_reset_success">Расход сброшен</string>
 
     <string name="activation_title">Активация</string>
-    <string name="activation_subtitle">Введите код активации, чтобы использовать приложение. Вход администратора также поддерживается.</string>
     <string name="activation_code_field">Код активации (имя пользователя)</string>
     <string name="activation_config_field">Конфигурация панели (Base64) — необязательно</string>
-    <string name="activation_config_help">Если адрес панели изменился, вставьте полученный код Base64; пусто = адрес по умолчанию.</string>
     <string name="activation_submit">Активировать</string>
     <string name="activation_ongoing">Проверка активации…</string>
     <string name="activation_success">Активировано.</string>

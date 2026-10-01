@@ -610,10 +610,8 @@
     <string name="toast_reset_success">Đã đặt lại mức sử dụng</string>
 
     <string name="activation_title">Kích hoạt</string>
-    <string name="activation_subtitle">Nhập mã kích hoạt để sử dụng ứng dụng này. Đăng nhập quản trị cũng được hỗ trợ.</string>
     <string name="activation_code_field">Mã kích hoạt (tên người dùng)</string>
     <string name="activation_config_field">Cấu hình bảng điều khiển (Base64) – tùy chọn</string>
-    <string name="activation_config_help">Nếu địa chỉ bảng điều khiển thay đổi, hãy dán mã Base64 bạn nhận được; để trống = địa chỉ mặc định.</string>
     <string name="activation_submit">Kích hoạt</string>
     <string name="activation_ongoing">Đang kiểm tra…</string>
     <string name="activation_success">Đã kích hoạt.</string>
