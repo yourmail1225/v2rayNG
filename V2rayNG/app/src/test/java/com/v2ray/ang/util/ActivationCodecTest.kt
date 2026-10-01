@@ -46,7 +46,7 @@ class ActivationCodecTest {
     @Test
     fun rejectsInvalidCharacters() {
         assertThrows(IllegalArgumentException::class.java) {
-            ActivationCodec.decode("TWF$$u")
+            ActivationCodec.decode("TWF\$u")
         }
     }
 
