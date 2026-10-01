@@ -126,7 +126,7 @@ class ActivationManagerTest {
     @Test
     fun resolveRepositoryKeepsBuiltInValuesWhenConfigBlank() {
         assertEquals(ActivationManager.DEFAULT_REPO, ActivationManager.resolveRepository(null))
-        assertEquals(ActivationManager.DEFAULT_BRANCH, ActivationManager.resolveRepository(""))
+        assertEquals(ActivationManager.DEFAULT_REPO, ActivationManager.resolveRepository(""))
         assertNull(settingsValues[ActivationManagerTest.KEY_REPO])
         assertNull(settingsValues[ActivationManagerTest.KEY_TOKEN])
     }

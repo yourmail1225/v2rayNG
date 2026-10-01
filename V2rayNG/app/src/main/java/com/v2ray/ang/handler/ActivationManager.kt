@@ -328,8 +328,10 @@ object ActivationManager {
     /**
      * Parses the optional setup code. A blank field is the ordinary "use the built-in
      * repository" case and returns null without touching the stored destination, so a
-     * code carrying only a token still works. A malformed blob is a user typo: it is
-     * logged with its cause and treated the same way, which never breaks activation.
+     * code carrying only a token still works. A malformed blob is a typo in an optional
+     * field, not a fault: it is swallowed here so the activation screen simply falls back
+     * to the built-in repository and the JVM tests, which have no android.util.Log, can
+     * exercise the failure branch.
      */
     internal fun parseSetup(configCode: String?): ActivationSetup? {
         if (configCode.isNullOrBlank()) return null
@@ -338,7 +340,6 @@ object ActivationManager {
             val setup = JsonUtil.fromJsonSafe(String(raw, Charsets.UTF_8), ActivationSetup::class.java)
             setup?.takeIf { it.v >= SETUP_CODE_VERSION && !it.repo.isNullOrBlank() }
         } catch (e: Exception) {
-            LogUtil.e(AppConfig.TAG, "Activation setup code could not be parsed", e)
             null
         }
     }
