@@ -30,11 +30,11 @@ class ActivationManagerTest {
             true
         }
         whenever(settings.encode(any<String>(), any<Boolean>())).thenAnswer {
-            settingsValues[it.getArgument<String>(0)] = it.getArgument(1).toString()
+            settingsValues[it.getArgument<String>(0)] = it.getArgument<Boolean>(1).toString()
             true
         }
         whenever(settings.decodeBool(any<String>(), any<Boolean>())).thenAnswer {
-            settingsValues[it.getArgument<String>(0)]?.toBoolean() ?: it.getArgument(1)
+            settingsValues[it.getArgument<String>(0)]?.toBoolean() ?: it.getArgument<Boolean>(1)
         }
     }
 
