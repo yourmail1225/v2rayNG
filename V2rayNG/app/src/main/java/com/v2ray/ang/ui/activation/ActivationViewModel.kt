@@ -3,7 +3,6 @@ package com.v2ray.ang.ui.activation
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.v2ray.ang.AngApplication
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.handler.ActivationErrorKind
@@ -13,7 +12,6 @@ import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.ui.base.BaseViewModel
-import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,9 +42,9 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
         viewModelScope.launch {
             _uiState.value = ActivationUiState(isLoading = true)
             when (val outcome = ActivationManager.activate(code, configCode)) {
-                is ActivationOutcome.Master -> complete(ActivationManager.MODE_MASTER, code.trim())
+                is ActivationOutcome.Master -> complete(ActivationManager.MODE_MASTER, code.trim(), "")
                 is ActivationOutcome.Subscription ->
-                    importSubscription(outcome.url, outcome.row, code.trim())
+                    importSubscription(outcome.code, outcome.row)
                 is ActivationOutcome.Error -> {
                     _uiState.value = ActivationUiState(errorResId = outcome.kind.toResId())
                 }
@@ -54,25 +52,30 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
         }
     }
 
-    private suspend fun importSubscription(url: String, rowId: String, code: String) {
+    /**
+     * Imports the fetched row as raw locked-package text. The row is already read, so
+     * no subscription URL is created: the local subscription id is the activated code,
+     * which keeps the per-subscription usage lock that later reports traffic to the row.
+     */
+    private suspend fun importSubscription(code: String, row: String) {
         val importedCount = withContext(Dispatchers.IO) {
-            val subId = rowId.ifBlank { Utils.getUuid() }
-            val subItem = SubscriptionItem(remarks = code, url = url, autoUpdate = true)
-            MmkvManager.encodeSubscription(subId, subItem)
-            val (count, _) = AngConfigManager.importBatchConfig(url, subId, append = false)
-            count
+            MmkvManager.encodeSubscription(code, SubscriptionItem(remarks = code, url = "", autoUpdate = false))
+            AngConfigManager.importBatchConfig(row, code, append = false).first
         }
         if (importedCount > 0) {
             SettingsChangeManager.makeSetupGroupTab()
-            complete(ActivationManager.MODE_CODE, code)
+            complete(ActivationManager.MODE_CODE, code, code)
         } else {
             _uiState.value = ActivationUiState(errorResId = R.string.activation_error_generic)
         }
     }
 
-    private fun complete(mode: String, code: String) {
-        ActivationManager.markActivated(mode, code)
+    private fun complete(mode: String, code: String, subscriptionId: String) {
+        ActivationManager.markActivated(mode, code, subscriptionId)
         _uiState.value = ActivationUiState()
+        if (subscriptionId.isNotBlank()) {
+            ActivationManager.reportActivation(code, subscriptionId)
+        }
         toastSuccess(R.string.activation_success)
         finishActivity()
     }
@@ -82,6 +85,7 @@ internal fun ActivationErrorKind.toResId(): Int = when (this) {
     ActivationErrorKind.NETWORK -> R.string.activation_error_network
     ActivationErrorKind.LIMIT -> R.string.activation_error_limit
     ActivationErrorKind.DENIED -> R.string.activation_error_denied
+    ActivationErrorKind.NO_WRITE_TOKEN -> R.string.activation_error_no_write_token
     else -> R.string.activation_error_generic
 }
 

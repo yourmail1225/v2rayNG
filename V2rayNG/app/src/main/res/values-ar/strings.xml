@@ -626,14 +626,15 @@
 
     <string name="activation_title">تفعيل</string>
     <string name="activation_code_field">رمز التفعيل (اسم المستخدم)</string>
-    <string name="activation_config_field">إعدادات اللوحة (Base64) — اختياري</string>
+    <string name="activation_config_field">إعدادات GitHub (Base64) — اختياري</string>
     <string name="activation_submit">تفعيل</string>
     <string name="activation_ongoing">جارٍ التحقق من التفعيل…</string>
     <string name="activation_success">تم التفعيل.</string>
     <string name="activation_master_success">تم الدخول كمدير.</string>
     <string name="activation_imported">تم استيراد الاشتراك.</string>
-    <string name="activation_error_network">تعذر الوصول إلى خادم التفعيل. تحقق من الاتصال وحاول مجددًا.</string>
+    <string name="activation_error_network">تعذر الوصول إلى GitHub. تحقق من الاتصال وحاول مجددًا.</string>
     <string name="activation_error_denied">رمز التفعيل غير مقبول. تحقق منه وحاول مجددًا.</string>
-    <string name="activation_error_limit">بلغ هذا الرمز حد الأجهزة المسموح.</string>
+    <string name="activation_error_limit">بلغ هذا الرمز حد مرات التفعيل المسموح.</string>
+    <string name="activation_error_no_write_token">أضف رمز إعدادات GitHub (Base64) لاستخدام رمز له حد تفعيلات.</string>
     <string name="activation_error_generic">فشل التفعيل.</string>
 </resources>

@@ -620,14 +620,15 @@
 
     <string name="activation_title">Активация</string>
     <string name="activation_code_field">Код активации (имя пользователя)</string>
-    <string name="activation_config_field">Конфигурация панели (Base64) — необязательно</string>
+    <string name="activation_config_field">Конфигурация GitHub (Base64) — необязательно</string>
     <string name="activation_submit">Активировать</string>
     <string name="activation_ongoing">Проверка активации…</string>
     <string name="activation_success">Активировано.</string>
     <string name="activation_master_success">Вы вошли как администратор.</string>
     <string name="activation_imported">Подписка импортирована.</string>
-    <string name="activation_error_network">Не удалось связаться с сервером активации. Проверьте соединение и повторите.</string>
+    <string name="activation_error_network">Не удалось связаться с GitHub. Проверьте соединение и повторите.</string>
     <string name="activation_error_denied">Код активации не принят. Проверьте код и повторите.</string>
-    <string name="activation_error_limit">Для этого кода достигнут лимит устройств.</string>
+    <string name="activation_error_limit">Для этого кода достигнут лимит активаций.</string>
+    <string name="activation_error_no_write_token">Добавьте код конфигурации GitHub (Base64), чтобы использовать код с лимитом активаций.</string>
     <string name="activation_error_generic">Не удалось активировать.</string>
 </resources>

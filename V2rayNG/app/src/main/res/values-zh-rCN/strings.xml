@@ -611,14 +611,15 @@
 
     <string name="activation_title">激活</string>
     <string name="activation_code_field">激活码（用户名）</string>
-    <string name="activation_config_field">面板配置 (Base64) — 可选</string>
+    <string name="activation_config_field">GitHub 配置 (Base64) — 可选</string>
     <string name="activation_submit">激活</string>
     <string name="activation_ongoing">正在验证…</string>
     <string name="activation_success">已激活。</string>
     <string name="activation_master_success">已以管理员身份登录。</string>
     <string name="activation_imported">订阅已导入。</string>
-    <string name="activation_error_network">无法连接激活服务器。请检查网络后重试。</string>
+    <string name="activation_error_network">无法连接 GitHub。请检查网络后重试。</string>
     <string name="activation_error_denied">激活码不被接受。请检查后重试。</string>
-    <string name="activation_error_limit">此激活码的设备数已达上限。</string>
+    <string name="activation_error_limit">此激活码的激活次数已达上限。</string>
+    <string name="activation_error_no_write_token">请添加 GitHub 配置代码 (Base64) 以使用带激活次数上限的激活码。</string>
     <string name="activation_error_generic">激活失败。</string>
 </resources>

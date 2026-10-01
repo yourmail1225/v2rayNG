@@ -614,14 +614,15 @@
 
     <string name="activation_title">فعال‌سازی</string>
     <string name="activation_code_field">کد فعال‌سازی (نام کاربری)</string>
-    <string name="activation_config_field">پیکربندی پنل (Base64) — اختیاری</string>
+    <string name="activation_config_field">پیکربندی GitHub (Base64) — اختیاری</string>
     <string name="activation_submit">فعال‌سازی</string>
     <string name="activation_ongoing">دینگ اَم در حال بررسی…</string>
     <string name="activation_success">فعال بی.</string>
     <string name="activation_master_success">به‌عنوان مدیر وارد بیّی.</string>
     <string name="activation_imported">اشتراک وارد بی.</string>
-    <string name="activation_error_network">ارتباط با سرور فعال‌سازی نتونسیم بگیریم. اینترنت و آدرس اَ چک بوکونین.</string>
+    <string name="activation_error_network">ارتباط با GitHub نتونسیم بگیریم. اینترنت اَ چک بوکونین.</string>
     <string name="activation_error_denied">کد فعال‌سازی قبول نبی. کد اَ چک و دگس بوکونین.</string>
-    <string name="activation_error_limit">سهمیه دستگاه برای ای کد پر بیّه.</string>
+    <string name="activation_error_limit">سهمیه فعال‌سازی برای ای کد پر بیّه.</string>
+    <string name="activation_error_no_write_token">کد فعال‌سازی دارای محدودیت اَ باز بوخانین، کد پیکربندی GitHub (Base64) اَ زیات بوکونین.</string>
     <string name="activation_error_generic">فعال‌سازی انجام نبی.</string>
 </resources>

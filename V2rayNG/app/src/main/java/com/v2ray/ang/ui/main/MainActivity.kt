@@ -104,7 +104,7 @@ class MainActivity : HelperBaseComponentActivity() {
             }
             mainViewModel.refreshUiSettings()
             mainViewModel.onAction(MainAction.RefreshGroups)
-            reportActiveAsync()
+            reportUsageAsync()
         }
 
     private var activationLaunched = false
@@ -115,11 +115,9 @@ class MainActivity : HelperBaseComponentActivity() {
         activationLauncher.launch(Intent(this, ActivationActivity::class.java))
     }
 
-    private fun reportActiveAsync() {
+    private fun reportUsageAsync() {
         if (!ActivationManager.isActivated()) return
-        lifecycleScope.launch(Dispatchers.IO) {
-            ActivationManager.reportActive()
-        }
+        ActivationManager.reportUsage()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,7 +126,7 @@ class MainActivity : HelperBaseComponentActivity() {
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
         ensureActivation()
-        reportActiveAsync()
+        reportUsageAsync()
     }
 
     @Composable

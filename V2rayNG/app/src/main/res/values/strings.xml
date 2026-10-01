@@ -615,14 +615,15 @@
 
     <string name="activation_title">Activation</string>
     <string name="activation_code_field">Activation code (username)</string>
-    <string name="activation_config_field">Panel configuration (Base64) - optional</string>
+    <string name="activation_config_field">GitHub configuration (Base64) - optional</string>
     <string name="activation_submit">Activate</string>
     <string name="activation_ongoing">Checking activation…</string>
     <string name="activation_success">Activated.</string>
     <string name="activation_master_success">Signed in as administrator.</string>
     <string name="activation_imported">Subscription imported.</string>
-    <string name="activation_error_network">Could not reach the activation server. Check the connection and try again.</string>
+    <string name="activation_error_network">Could not reach GitHub. Check the connection and try again.</string>
     <string name="activation_error_denied">This activation code was not accepted. Check the code and try again.</string>
-    <string name="activation_error_limit">This code has reached its device limit.</string>
+    <string name="activation_error_limit">This code has reached its activation limit.</string>
+    <string name="activation_error_no_write_token">Add the GitHub configuration code (Base64) to use a code with an activation limit.</string>
     <string name="activation_error_generic">Activation failed.</string>
 </resources>

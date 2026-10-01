@@ -614,14 +614,15 @@
 
     <string name="activation_title">সক্রিয়করণ</string>
     <string name="activation_code_field">অ্যাক্টিভেশন কোড (ইউজারনেম)</string>
-    <string name="activation_config_field">প্যানেল কনফিগারেশন (Base64) – ঐচ্ছিক</string>
+    <string name="activation_config_field">GitHub কনফিগারেশন (Base64) – ঐচ্ছিক</string>
     <string name="activation_submit">সক্রিয় করুন</string>
     <string name="activation_ongoing">সক্রিয়করণ যাচাই হচ্ছে…</string>
     <string name="activation_success">সক্রিয় হয়েছে।</string>
     <string name="activation_master_success">অ্যাডমিন হিসেবে প্রবেশ করেছেন।</string>
     <string name="activation_imported">সাবস্ক্রিপশন ইমপোর্ট হয়েছে।</string>
-    <string name="activation_error_network">অ্যাক্টিভেশন সার্ভারে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</string>
+    <string name="activation_error_network">GitHub-এ পৌঁছানো যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</string>
     <string name="activation_error_denied">অ্যাক্টিভেশন কোড গ্রহণ করা হয়নি। কোড পরীক্ষা করে আবার চেষ্টা করুন।</string>
-    <string name="activation_error_limit">এই কোডের ডিভাইস সীমা পূর্ণ হয়ে গেছে।</string>
+    <string name="activation_error_limit">এই কোডের অ্যাক্টিভেশন সীমা পূর্ণ হয়ে গেছে।</string>
+    <string name="activation_error_no_write_token">অ্যাক্টিভেশন সীমাযুক্ত কোড ব্যবহার করতে GitHub কনফিগারেশন কোড (Base64) যোগ করুন।</string>
     <string name="activation_error_generic">সক্রিয়করণ ব্যর্থ হয়েছে।</string>
 </resources>

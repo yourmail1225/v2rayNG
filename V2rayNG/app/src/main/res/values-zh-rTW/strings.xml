@@ -611,14 +611,15 @@
 
     <string name="activation_title">啟用</string>
     <string name="activation_code_field">啟用碼（使用者名稱）</string>
-    <string name="activation_config_field">面板設定 (Base64) — 選用</string>
+    <string name="activation_config_field">GitHub 設定 (Base64) — 選用</string>
     <string name="activation_submit">啟用</string>
     <string name="activation_ongoing">正在驗證…</string>
     <string name="activation_success">已啟用。</string>
     <string name="activation_master_success">已以管理員身分登入。</string>
     <string name="activation_imported">訂閱已匯入。</string>
-    <string name="activation_error_network">無法連線啟用伺服器。請檢查連線後重試。</string>
+    <string name="activation_error_network">無法連線 GitHub。請檢查連線後重試。</string>
     <string name="activation_error_denied">啟用碼不被接受。請檢查後重試。</string>
-    <string name="activation_error_limit">此啟用碼的裝置數已達上限。</string>
+    <string name="activation_error_limit">此啟用碼的啟用次數已達上限。</string>
+    <string name="activation_error_no_write_token">請新增 GitHub 設定代碼 (Base64) 以使用帶啟用次數上限的啟用碼。</string>
     <string name="activation_error_generic">啟用失敗。</string>
 </resources>
