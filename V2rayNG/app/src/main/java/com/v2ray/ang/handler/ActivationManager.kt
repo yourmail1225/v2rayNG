@@ -255,7 +255,7 @@ object ActivationManager {
     /** Row text of a code, or null when the repository has no such file. */
     private fun fetchRow(code: String): String? {
         val request = Request.Builder().url(rawRowUrl(code)).build()
-        client.newCall(request).execute().use { response ->
+        return client.newCall(request).execute().use { response ->
             when {
                 response.code == 404 -> null
                 !response.isSuccessful -> throw IOException("HTTP ${response.code}")
@@ -271,7 +271,7 @@ object ActivationManager {
             .header("Authorization", "Bearer ${token()}")
             .header("Accept", "application/vnd.github+json")
             .build()
-        client.newCall(request).execute().use { response ->
+        return client.newCall(request).execute().use { response ->
             when {
                 response.code == 404 -> null
                 !response.isSuccessful -> throw IOException("HTTP ${response.code}")
@@ -313,7 +313,7 @@ object ActivationManager {
             .header("Accept", "application/vnd.github+json")
             .put(body.toRequestBody(jsonMediaType))
             .build()
-        client.newCall(request).execute().use { response ->
+        return client.newCall(request).execute().use { response ->
             when {
                 response.isSuccessful -> true
                 response.code == 409 || response.code == 422 -> false
