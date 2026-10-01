@@ -354,8 +354,9 @@ class MainServerRowModelsTest {
 
     @Test
     fun gbStringShowsOneDecimalPlace() {
-        assertEquals("1.2", gbString(1_288_490_188L))
         assertEquals("0.5", gbString(536_870_912L))
+        assertEquals("1.1", gbString(1_200_000_000L))
+        assertEquals("1.5", gbString(1_610_612_736L))
     }
 
     @Test
@@ -366,9 +367,11 @@ class MainServerRowModelsTest {
 
     @Test
     fun remainingGbStringUsesLargerOfRemainingAndZero() {
-        assertEquals("50", remainingGbString(usedBytes = 50L, dataLimitBytes = 100L))
-        assertEquals("0", remainingGbString(usedBytes = 100L, dataLimitBytes = 100L))
-        assertEquals("0", remainingGbString(usedBytes = 120L, dataLimitBytes = 100L))
+        val gib = 1_073_741_824L
+        assertEquals("50", remainingGbString(usedBytes = 0L, dataLimitBytes = 50L * gib))
+        assertEquals("25.5", remainingGbString(usedBytes = 24L * gib + gib / 2, dataLimitBytes = 50L * gib))
+        assertEquals("0", remainingGbString(usedBytes = 50L * gib, dataLimitBytes = 50L * gib))
+        assertEquals("0", remainingGbString(usedBytes = 51L * gib, dataLimitBytes = 50L * gib))
         assertEquals("0", remainingGbString(usedBytes = 0L, dataLimitBytes = 0L))
     }
 }
