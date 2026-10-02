@@ -12,6 +12,7 @@ import com.v2ray.ang.handler.ActivationManager
 import com.v2ray.ang.handler.ActivationOutcome
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
+import com.v2ray.ang.handler.RowActivation
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.SubscriptionUpdater
 import com.v2ray.ang.ui.base.BaseViewModel
@@ -73,7 +74,10 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
             // The row's shared quota is copied onto every entry, so the first one carries
             // the group's expiry and limit; a row with no lock block leaves both at 0.
             val quota = LockedPackage.parse(row).entries.firstOrNull()
-            val previous = MmkvManager.decodeGroupLock(subscriptionId)
+            // The default group is shared, so a re-activation of a different code would
+            // otherwise inherit the previous customer's counter. The row's own reported
+            // usage is the authoritative figure for whoever it belongs to.
+            val reported = RowActivation.read(row).usedBytes
             MmkvManager.encodeGroupLock(
                 subscriptionId,
                 GroupLockConfig(
@@ -81,7 +85,7 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
                     expiryEpochMinute = quota?.expiryEpochMinute ?: 0L,
                     startEpochMinute = LockEvaluator.todayEpochMinute(),
                     dataLimitBytes = quota?.dataLimitBytes ?: 0L,
-                    usedBytes = previous.usedBytes,
+                    usedBytes = reported,
                 )
             )
             MmkvManager.encodeSubscription(
