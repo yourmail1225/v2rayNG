@@ -348,4 +348,31 @@ class LockEvaluatorTest {
         )
         assertTrue(denied is LockEvaluator.Decision.Denied)
     }
+
+    @Test
+    fun anEnabledGroupIsChargedWithoutAnyCondition() {
+        // An activated row usually carries no expiry and no volume limit. Its traffic is
+        // still what the panel reports, so charging must not depend on a limit existing.
+        assertTrue(LockEvaluator.chargesUsage(GroupLockConfig(enabled = true)))
+        assertTrue(LockEvaluator.chargesUsage(GroupLockConfig(enabled = true, expiryEpochMinute = 99)))
+        assertTrue(LockEvaluator.chargesUsage(GroupLockConfig(enabled = true, dataLimitBytes = 1)))
+    }
+
+    @Test
+    fun anUnlockedOrAbsentGroupIsNotCharged() {
+        assertEquals(false, LockEvaluator.chargesUsage(null))
+        assertEquals(
+            false,
+            LockEvaluator.chargesUsage(GroupLockConfig(enabled = false, dataLimitBytes = 1)),
+        )
+    }
+
+    @Test
+    fun chargingAndEnforcementAreIndependentQuestions() {
+        // The row that broke reporting had no limit, yet charging is required for it.
+        // Enforcement must still allow it, so the two answers have to stay separate.
+        val openEnded = GroupLockConfig(enabled = true)
+        assertTrue(LockEvaluator.chargesUsage(openEnded))
+        assertTrue(LockEvaluator.evaluate(openEnded) is LockEvaluator.Decision.Allow)
+    }
 }

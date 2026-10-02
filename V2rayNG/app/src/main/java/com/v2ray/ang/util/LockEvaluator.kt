@@ -178,6 +178,19 @@ object LockEvaluator {
     }
 
     /**
+     * Whether a subscription group's traffic must be counted against it.
+     *
+     * This is deliberately not the same question as [evaluate]: a group is charged as
+     * soon as its lock is enabled, even when it has no expiry and no data limit. An
+     * activated subscription enables its group to count the traffic it reports to the
+     * panel, and such a row usually carries no limit to enforce, so gating charging on a
+     * condition being present left the reported usage at zero forever.
+     *
+     * @param lock The group lock, or null when the group has none.
+     */
+    fun chargesUsage(lock: GroupLockConfig?): Boolean = lock?.enabled == true
+
+    /**
      * Evaluates whether a server profile's lock currently blocks a connection.
      * A lock with no expiration or data limit only prevents editing and never
      * blocks connecting.

@@ -185,7 +185,6 @@
 
 
     <string name="subscription_updater_job_tips">Задача будет выполняться в фоновом режиме, информация о ходе выполнения будет отображаться в уведомлении.</string>
-    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">Автопроверка после обновления подписки</string>
     <string name="summary_pref_auto_test_after_update_subscription">Автоматическая проверка занимает много времени. Если параметр включён, задача выполняется в фоновом режиме; иначе — на текущей странице.</string>
     <string name="title_pref_auto_remove_invalid_after_test">Автоудаление нерабочих профилей после проверки</string>

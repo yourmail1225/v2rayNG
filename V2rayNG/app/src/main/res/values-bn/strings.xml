@@ -185,7 +185,6 @@
 
 
     <string name="subscription_updater_job_tips">কাজটি ব্যাকগ্রাউন্ডে চলবে এবং অগ্রগতির তথ্য বিজ্ঞপ্তিতে দেখানো হবে।</string>
-    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">সাবস্ক্রিপশন আপডেটের পর স্বয়ংক্রিয় পরীক্ষা</string>
     <string name="summary_pref_auto_test_after_update_subscription">স্বয়ংক্রিয় পরীক্ষায় অনেক সময় লাগে। চালু থাকলে কাজটি ব্যাকগ্রাউন্ডে চলবে; অন্যথায় বর্তমান পৃষ্ঠায় চলবে।</string>
     <string name="title_pref_auto_remove_invalid_after_test">পরীক্ষার পর অবৈধ কনফিগ স্বয়ংক্রিয়ভাবে মুছুন</string>

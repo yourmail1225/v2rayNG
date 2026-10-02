@@ -275,6 +275,10 @@ fun MainScreen(
                                 }
                             }
                         )
+                    } else {
+                        // One subscription has no tab to tap, so its name is shown on its
+                        // own; without this the servers below belonged to no visible group.
+                        groups.firstOrNull()?.let { GroupHeader(group = it) }
                     }
 
                     HorizontalPager(

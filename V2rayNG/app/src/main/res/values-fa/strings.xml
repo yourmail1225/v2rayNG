@@ -185,7 +185,6 @@
 
 
     <string name="subscription_updater_job_tips">این کار در پس‌زمینه اجرا می‌شود و پیشرفت آن در اعلان نمایش داده خواهد شد.</string>
-    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">آزمایش خودکار پس از به‌روزرسانی اشتراک</string>
     <string name="summary_pref_auto_test_after_update_subscription">آزمایش خودکار زمان زیادی می‌برد. در صورت فعال بودن، این کار در پس‌زمینه اجرا می‌شود؛ در غیر این صورت در صفحهٔ فعلی اجرا خواهد شد.</string>
     <string name="title_pref_auto_remove_invalid_after_test">حذف خودکار کانفیگ‌های نامعتبر بعد از پینگ</string>

@@ -185,7 +185,6 @@
 
 
     <string name="subscription_updater_job_tips">Tác vụ sẽ chạy trong nền và thông tin tiến độ sẽ hiển thị trong thông báo.</string>
-    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">Tự động kiểm tra sau khi cập nhật đăng ký</string>
     <string name="summary_pref_auto_test_after_update_subscription">Quá trình kiểm tra tự động mất nhiều thời gian. Nếu bật, tác vụ sẽ chạy trong nền; nếu không, tác vụ sẽ chạy trên trang hiện tại.</string>
     <string name="title_pref_auto_remove_invalid_after_test">Tự động xóa cấu hình không hợp lệ sau khi kiểm tra</string>

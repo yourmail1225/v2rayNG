@@ -376,7 +376,7 @@ object CoreServiceManager {
         // A locked group is charged even without a data limit, because the counter is
         // what the panel shows the customer as consumed traffic and what the row writes
         // back to GitHub. The limit only decides when charging stops the session.
-        if (lock.enabled) {
+        if (LockEvaluator.chargesUsage(lock)) {
             val used = MmkvManager.addGroupUsedBytes(groupId, bytes)
             if (lock.dataLimitBytes > 0L && used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
                 dataLimitNoticeShown = true
@@ -444,10 +444,11 @@ object CoreServiceManager {
                 val group = MmkvManager.decodeGroupLock(config.subscriptionId)
                 val profileGuid = currentProfileGuid
                 val profile = profileGuid?.let { MmkvManager.decodeServerAffiliationInfo(it) }
-                val groupActive = group.enabled &&
-                    (group.dataLimitBytes > 0L ||
-                        group.expiryEpochMinute != 0L ||
-                        group.expiryEpochDay != 0L)
+// An enabled group is charged even when it carries no expiry and no volume limit;
+                // see LockEvaluator.chargesUsage. Gating this loop on a condition being
+                // present left the counter at zero forever for exactly the activated rows
+                // that had no limit to enforce.
+                val groupActive = LockEvaluator.chargesUsage(group)
                 val profileActive = profile != null &&
                     (profile.locked || profile.persistentLock) &&
                     (profile.dataLimitBytes > 0L || profile.expiryEpochMinute != 0L)

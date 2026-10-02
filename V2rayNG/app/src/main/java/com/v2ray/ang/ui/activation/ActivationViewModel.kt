@@ -62,9 +62,10 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
      * Installs the fetched row into the app's default subscription group.
      *
      * The row is already read, so activation never creates a second subscription: it
-     * reuses [AppConfig.DEFAULT_SUBSCRIPTION_ID], renames it, and stores the row's raw
-     * URL. That URL is what makes the subscription updater work later, since it skips any
-     * subscription without one, and it is also what a later refresh reads to pick up a
+     * reuses [AppConfig.DEFAULT_SUBSCRIPTION_ID] and keeps naming it after the customer,
+     * which is what the group header above the configurations reads. It also stores the
+     * row's raw URL, which is what makes the subscription updater work later, since it
+     * skips any subscription without one, and what a later refresh reads to pick up a
      * changed row. The group's own lock takes the row's expiry and data limit so traffic
      * is charged against the subscription and can be reported back to GitHub.
      */
@@ -74,10 +75,10 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
             // The row's shared quota is copied onto every entry, so the first one carries
             // the group's expiry and limit; a row with no lock block leaves both at 0.
             val quota = LockedPackage.parse(row).entries.firstOrNull()
+            val published = RowActivation.read(row)
             // The default group is shared, so a re-activation of a different code would
-            // otherwise inherit the previous customer's counter. The row's own reported
-            // usage is the authoritative figure for whoever it belongs to.
-            val reported = RowActivation.read(row).usedBytes
+            // otherwise inherit the previous customer's counter. The row carries the
+            // authoritative figure, and the name, for whoever it belongs to.
             MmkvManager.encodeGroupLock(
                 subscriptionId,
                 GroupLockConfig(
@@ -85,13 +86,13 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
                     expiryEpochMinute = quota?.expiryEpochMinute ?: 0L,
                     startEpochMinute = LockEvaluator.todayEpochMinute(),
                     dataLimitBytes = quota?.dataLimitBytes ?: 0L,
-                    usedBytes = reported,
+                    usedBytes = published.usedBytes,
                 )
             )
             MmkvManager.encodeSubscription(
                 subscriptionId,
                 SubscriptionItem(
-                    remarks = getString(R.string.subscription_default_group),
+                    remarks = published.username.ifBlank { code },
                     url = ActivationManager.rowUrl(code),
                     autoUpdate = true,
                     updateInterval = AppConfig.SUBSCRIPTION_ACTIVATED_UPDATE_INTERVAL_MINUTES,

@@ -185,7 +185,6 @@
 
 
     <string name="subscription_updater_job_tips">ستعمل المهمة في الخلفية، وسيُعرض تقدمها في الإشعار.</string>
-    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">اختبار تلقائي بعد تحديث الاشتراك</string>
     <string name="summary_pref_auto_test_after_update_subscription">يستغرق الاختبار التلقائي وقتاً طويلاً. عند تمكينه، ستعمل المهمة في الخلفية؛ وإلا فستعمل في الصفحة الحالية.</string>
     <string name="title_pref_auto_remove_invalid_after_test">حذف الإعدادات غير الصالحة تلقائياً بعد الاختبار</string>
