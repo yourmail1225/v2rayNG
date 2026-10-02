@@ -51,6 +51,15 @@ object AppConfig {
     const val PREF_OBSERVATORY_LEAST_LOAD_TIMEOUT = "pref_observatory_least_load_timeout"
     const val SUBSCRIPTION_UPDATE_TASK_NAME = "subscription_updater"
     const val SUBSCRIPTION_MIN_INTERVAL_MINUTES = 15L
+
+    /**
+     * Refresh interval the app gives the subscription an activated row installs.
+     *
+     * The row can be republished by the panel at any time, so the customer has to pick
+     * the change up without reinstalling; an hour keeps a stale row from surviving a
+     * price or server change while staying far below the update cost of every connection.
+     */
+    const val SUBSCRIPTION_ACTIVATED_UPDATE_INTERVAL_MINUTES = 60L
     const val PREF_SPEED_ENABLED = "pref_speed_enabled"
     const val PREF_CONFIRM_REMOVE = "pref_confirm_remove"
     const val PREF_DOUBLE_COLUMN_DISPLAY = "pref_double_column_display"

@@ -47,8 +47,10 @@ class ActivationManagerTest {
         count: Long = 0L,
         used: Long = 0L,
         entries: Int = 1,
+        lastSeen: String? = null,
     ): String {
         val list = (1..entries).joinToString(",") { "{\"content\":\"vless://node$it@1.1.1.1:443#n$it\"}" }
+        val seen = if (lastSeen == null) "" else ",\"lastSeen\":\"$lastSeen\""
         val payload = "{" +
             "\"password\":\"1234\"," +
             "\"expiryEpochMinute\":29849549," +
@@ -59,6 +61,7 @@ class ActivationManagerTest {
             "\"fetchCount\":$count," +
             "\"usedBytes\":$used," +
             "\"updatedAt\":\"2026-01-01T00:00:00\"" +
+            seen +
             "}," +
             "\"entries\":[$list]" +
             "}"
@@ -190,6 +193,19 @@ class ActivationManagerTest {
     }
 
     @Test
+    fun rowActivationReadsTheLastConnection() {
+        val status = RowActivation.read(row(lastSeen = "2026-03-03T08:30:00Z"))
+
+        assertEquals("2026-03-03T08:30:00Z", status.lastSeen)
+    }
+
+    @Test
+    fun aRowWithoutAReportedConnectionHasNoLastConnection() {
+        assertEquals("", RowActivation.read(row()).lastSeen)
+        assertEquals("", RowActivation.read(LEGACY_ROW).lastSeen)
+    }
+
+    @Test
     fun rowActivationOfLegacyRowWithoutBlockIsUnlimitedAndZero() {
         val status = RowActivation.read(LEGACY_ROW)
 
@@ -246,6 +262,23 @@ class ActivationManagerTest {
     }
 
     @Test
+    fun mergeIntoWritesTheLastConnectionOnlyWhenReported() {
+        val original = row()
+        val merged = RowActivation.mergeInto(
+            original,
+            RowActivation.read(original).copy(lastSeen = "2026-03-03T08:30:00Z"),
+        )
+
+        assertEquals("2026-03-03T08:30:00Z", RowActivation.read(merged).lastSeen)
+
+        val unreported = RowActivation.mergeInto(original, RowActivation.read(original))
+        assertTrue(
+            "an unreported connection must not add the key the panel reads",
+            !payloadOf(unreported).contains("lastSeen"),
+        )
+    }
+
+    @Test
     fun mergeIntoLeavesRowWithoutActivationBlockUntouched() {
         assertEquals(LEGACY_ROW, RowActivation.mergeInto(LEGACY_ROW, RowActivation(fetchCount = 1)))
     }
@@ -267,6 +300,23 @@ class ActivationManagerTest {
         ActivationManager.markActivated(ActivationManager.MODE_CODE, "sa1234", "sa1234")
         // No token stored: nothing is written, and no exception escapes.
         ActivationManager.reportUsage()
+    }
+
+    @Test
+    fun reportConnectionIsSkippedWithoutToken() {
+        ActivationManager.markActivated(ActivationManager.MODE_CODE, "sa1234", "sa1234")
+        // Same no-token guard as reportUsage: a connect must never fail or write blind.
+        ActivationManager.reportConnection()
+    }
+
+    @Test
+    fun rowUrlIsTheRawRowOfTheCode() {
+        // The activated subscription stores this URL, so it must address the row file and
+        // not the API or the repository root, and it must be usable as a subscription URL.
+        val url = ActivationManager.rowUrl("sa1234")
+
+        assertTrue(url, url.startsWith("https://raw.githubusercontent.com/"))
+        assertTrue(url, url.endsWith("/sa1234.row"))
     }
 
     @Test

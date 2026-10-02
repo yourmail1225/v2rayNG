@@ -22,6 +22,8 @@ import com.v2ray.ang.extension.delay
 import com.v2ray.ang.extension.isNotNullEmpty
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.NotificationManager
+import com.v2ray.ang.handler.ActivationManager
+import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.SpeedtestManager
 import com.v2ray.ang.helper.MessageHelper
@@ -59,6 +61,17 @@ object CoreServiceManager {
     private var networkMonitor: NetworkMonitor? = null
     private val connectionTestScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val groupUsageScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Refreshes subscriptions and pushes the traffic reading after a real connection.
+     *
+     * A row the panel republished since the last hourly worker run only reaches the
+     * customer here, and the same write that updates `usedBytes` stamps the connection so
+     * the panel can show when the subscription was last in use. Both go through the
+     * activation manager's own scope, which owns the row write, so this scope only
+     * schedules them and is cancelled with the service.
+     */
+    private val connectionReportScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile
     private var isReloading = false
@@ -223,9 +236,26 @@ object CoreServiceManager {
 
         if (!isReload) {
             MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_SUCCESS, "")
+            onConnectionEstablished()
         }
         NotificationManager.startSpeedNotification()
         LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core started successfully")
+    }
+
+    /**
+     * Periodic work an activated customer depends on once the tunnel is up.
+     *
+     * Runs off the connection path so a slow or unreachable row can never delay or fail
+     * the session, and a reload is excluded because reloading the running config is not a
+     * new connection.
+     */
+    private fun onConnectionEstablished() {
+        if (!ActivationManager.isActivated()) return
+        connectionReportScope.launch {
+            runCatching { AngConfigManager.updateConfigViaSubAll() }
+                .onFailure { LogUtil.e(AppConfig.TAG, "Connection refresh of subscriptions failed", it) }
+            ActivationManager.reportConnection()
+        }
     }
 
     /**
@@ -236,6 +266,7 @@ object CoreServiceManager {
     fun stopCoreLoop(): Boolean {
         connectionTestScope.coroutineContext.cancelChildren()
         groupUsageScope.coroutineContext.cancelChildren()
+        connectionReportScope.coroutineContext.cancelChildren()
         // A new connection attempt must start with a clean notice flag so the expiry and
         // data-limit messages are shown again for the next session.
         dataLimitNoticeShown = false
@@ -341,9 +372,12 @@ object CoreServiceManager {
         if (bytes <= 0L) return
         val groupId = subscriptionId ?: currentConfig?.subscriptionId ?: return
         val lock = MmkvManager.decodeGroupLock(groupId)
-        if (lock.enabled && lock.dataLimitBytes > 0L) {
+        // A locked group is charged even without a data limit, because the counter is
+        // what the panel shows the customer as consumed traffic and what the row writes
+        // back to GitHub. The limit only decides when charging stops the session.
+        if (lock.enabled) {
             val used = MmkvManager.addGroupUsedBytes(groupId, bytes)
-            if (used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
+            if (lock.dataLimitBytes > 0L && used >= lock.dataLimitBytes && !dataLimitNoticeShown) {
                 dataLimitNoticeShown = true
                 val service = getService() ?: return
                 LogUtil.i(AppConfig.TAG, "StartCore-Manager: Group data limit reached, stopping")

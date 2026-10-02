@@ -218,10 +218,33 @@ object ActivationManager {
         scope.launch {
             val usedBytes = MmkvManager.decodeGroupLock(subscriptionId).usedBytes
             updateRow(code) { current ->
-                if (usedBytes == current.usedBytes) null else current.copy(usedBytes = usedBytes)
+                if (usedBytes == current.usedBytes && current.lastSeen.isNotBlank()) {
+                    null
+                } else {
+                    current.copy(usedBytes = usedBytes, lastSeen = current.nowStamp())
+                }
             }
         }
     }
+
+    /**
+     * Records that the customer just brought the tunnel up, so the panel can show when the
+     * subscription was last in use rather than only when it was activated.
+     *
+     * Sent together with the traffic reading because both live in the same row and one
+     * write is cheaper than two; a customer whose usage has not moved still gets this
+     * stamp, which is the only new information a connection produces.
+     */
+    fun reportConnection() {
+        reportUsage()
+    }
+
+    /**
+     * Raw GitHub URL of a code's row. The activated subscription stores this so the
+     * subscription updater can refresh the row on its own instead of only importing the
+     * single copy fetched during activation.
+     */
+    fun rowUrl(code: String): String = rawRowUrl(code.trim())
 
     /**
      * Reads the row together with its blob sha in one Contents API call and writes the
@@ -390,6 +413,8 @@ internal data class RowActivation(
     val maxActivations: Long = 0L,
     val fetchCount: Long = 0L,
     val usedBytes: Long = 0L,
+    /** When the customer last brought the tunnel up; empty until the app reports one. */
+    val lastSeen: String = "",
 ) {
     val exhausted: Boolean get() = maxActivations > 0L && fetchCount >= maxActivations
 
@@ -414,6 +439,7 @@ internal data class RowActivation(
                 maxActivations = activation.longOrZero("maxActivations"),
                 fetchCount = activation.longOrZero("fetchCount"),
                 usedBytes = activation.longOrZero("usedBytes"),
+                lastSeen = activation.stringOrEmpty("lastSeen"),
             )
         }
 
@@ -429,6 +455,7 @@ internal data class RowActivation(
             activation.addProperty("maxActivations", value.maxActivations)
             activation.addProperty("fetchCount", value.fetchCount)
             activation.addProperty("usedBytes", value.usedBytes)
+            if (value.lastSeen.isNotBlank()) activation.addProperty("lastSeen", value.lastSeen)
             activation.addProperty("updatedAt", value.nowStamp())
             val body = JsonUtil.toJson(obj)
             return "${LockedPackage.HEADER}\n$body\n${LockedPackage.FOOTER}\n"

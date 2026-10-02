@@ -185,6 +185,7 @@
 
 
     <string name="subscription_updater_job_tips">وزیفه من پس زمینه کار اکونه وو ایلاعات پؽشرفت من اعلان نشووݩ داڌه ابۊ.</string>
+    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">تست خوتکار بئڌ و رۊز کۊنی اشتراک</string>
     <string name="summary_pref_auto_test_after_update_subscription">تست خوتکار زمووݩ زیاڌی ابره. ٱر ره وست بۊ، وزیفه من پس زمینه کار اکونه؛ وگرنه من همین بلگه کار اکونه.</string>
     <string name="title_pref_auto_remove_invalid_after_test">پاک کردن خوتکار کانفیگا نا موئتبر بئڌ پینگ</string>

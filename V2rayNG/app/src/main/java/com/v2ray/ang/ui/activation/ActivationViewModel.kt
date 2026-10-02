@@ -3,7 +3,9 @@ package com.v2ray.ang.ui.activation
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.dto.entities.GroupLockConfig
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.handler.ActivationErrorKind
 import com.v2ray.ang.handler.ActivationManager
@@ -11,7 +13,10 @@ import com.v2ray.ang.handler.ActivationOutcome
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
+import com.v2ray.ang.handler.SubscriptionUpdater
 import com.v2ray.ang.ui.base.BaseViewModel
+import com.v2ray.ang.util.LockedPackage
+import com.v2ray.ang.util.LockEvaluator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,18 +58,47 @@ class ActivationViewModel(application: Application) : BaseViewModel(application)
     }
 
     /**
-     * Imports the fetched row as raw locked-package text. The row is already read, so
-     * no subscription URL is created: the local subscription id is the activated code,
-     * which keeps the per-subscription usage lock that later reports traffic to the row.
+     * Installs the fetched row into the app's default subscription group.
+     *
+     * The row is already read, so activation never creates a second subscription: it
+     * reuses [AppConfig.DEFAULT_SUBSCRIPTION_ID], renames it, and stores the row's raw
+     * URL. That URL is what makes the subscription updater work later, since it skips any
+     * subscription without one, and it is also what a later refresh reads to pick up a
+     * changed row. The group's own lock takes the row's expiry and data limit so traffic
+     * is charged against the subscription and can be reported back to GitHub.
      */
     private suspend fun importSubscription(code: String, row: String) {
+        val subscriptionId = AppConfig.DEFAULT_SUBSCRIPTION_ID
         val importedCount = withContext(Dispatchers.IO) {
-            MmkvManager.encodeSubscription(code, SubscriptionItem(remarks = code, url = "", autoUpdate = false))
-            AngConfigManager.importBatchConfig(row, code, append = false).first
+            // The row's shared quota is copied onto every entry, so the first one carries
+            // the group's expiry and limit; a row with no lock block leaves both at 0.
+            val quota = LockedPackage.parse(row).entries.firstOrNull()
+            val previous = MmkvManager.decodeGroupLock(subscriptionId)
+            MmkvManager.encodeGroupLock(
+                subscriptionId,
+                GroupLockConfig(
+                    enabled = true,
+                    expiryEpochMinute = quota?.expiryEpochMinute ?: 0L,
+                    startEpochMinute = LockEvaluator.todayEpochMinute(),
+                    dataLimitBytes = quota?.dataLimitBytes ?: 0L,
+                    usedBytes = previous.usedBytes,
+                )
+            )
+            MmkvManager.encodeSubscription(
+                subscriptionId,
+                SubscriptionItem(
+                    remarks = getString(R.string.subscription_default_group),
+                    url = ActivationManager.rowUrl(code),
+                    autoUpdate = true,
+                    updateInterval = AppConfig.SUBSCRIPTION_ACTIVATED_UPDATE_INTERVAL_MINUTES,
+                )
+            )
+            AngConfigManager.importBatchConfig(row, subscriptionId, append = false).first
         }
         if (importedCount > 0) {
+            SubscriptionUpdater.syncOne(subId = subscriptionId)
             SettingsChangeManager.makeSetupGroupTab()
-            complete(ActivationManager.MODE_CODE, code, code)
+            complete(ActivationManager.MODE_CODE, code, subscriptionId)
         } else {
             _uiState.value = ActivationUiState(errorResId = R.string.activation_error_generic)
         }

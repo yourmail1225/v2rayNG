@@ -185,6 +185,7 @@
 
 
     <string name="subscription_updater_job_tips">任務將在背景執行，通知中會顯示進度資訊。</string>
+    <string name="subscription_default_group">default</string>
     <string name="title_pref_auto_test_after_update_subscription">更新訂閱後自動測試</string>
     <string name="summary_pref_auto_test_after_update_subscription">自動測試需要較長時間。啟用後，任務會在背景執行；否則會在目前頁面執行。</string>
     <string name="title_pref_auto_remove_invalid_after_test">測試後自動刪除無效設定</string>
