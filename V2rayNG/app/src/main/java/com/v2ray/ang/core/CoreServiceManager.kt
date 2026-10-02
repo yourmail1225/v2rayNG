@@ -399,8 +399,17 @@ object CoreServiceManager {
         // explicitly because they keep no [currentConfig].
         val pg = profileGuid ?: currentProfileGuid ?: return
         val aff = MmkvManager.decodeServerAffiliationInfo(pg) ?: return
-        if ((!aff.locked && !aff.persistentLock) || aff.dataLimitBytes <= 0L) return
+        if (!aff.locked && !aff.persistentLock) return
+        // A permanently locked profile accounts its traffic against one subscription-wide
+        // counter, and that counter is what its card shows. Charging was gated on a
+        // per-profile data limit being present, so a locked row published without a volume
+        // cap never moved that counter: the app kept displaying its first reading while
+        // the group counter, which is what the panel reads, kept climbing.
         val used = MmkvManager.addProfileUsedBytes(pg, bytes)
+        // Enforcement stays exactly as it was, so a lock that carries its own limit still
+        // stops the session on that limit. A permanently locked profile shares the
+        // subscription's quota, which its group enforces.
+        if (aff.dataLimitBytes <= 0L) return
         if (used >= aff.dataLimitBytes && !dataLimitNoticeShown) {
             dataLimitNoticeShown = true
             val service = getService() ?: return

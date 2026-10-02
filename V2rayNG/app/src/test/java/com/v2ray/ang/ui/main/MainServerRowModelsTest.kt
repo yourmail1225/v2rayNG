@@ -271,6 +271,46 @@ class MainServerRowModelsTest {
     }
 
     @Test
+    fun aLockedGroupSuppliesTheUsageItsCardsShow() {
+        // The group's counter is the one seeded from the row and reported to the panel,
+        // so it is what the app must show; the profile sum starts at zero and drifts.
+        val lockedGroup = GroupLockConfig(enabled = true, usedBytes = 4096)
+
+        assertEquals(4096L, sharedUsageForLockedProfiles(lockedGroup, summedProfileUsedBytes = 0L))
+    }
+
+    @Test
+    fun withoutALockedGroupTheProfileCountersAreTheOnlyUsage() {
+        assertEquals(
+            12L,
+            sharedUsageForLockedProfiles(null, summedProfileUsedBytes = 12L),
+        )
+        assertEquals(
+            12L,
+            sharedUsageForLockedProfiles(GroupLockConfig(enabled = false), summedProfileUsedBytes = 12L),
+        )
+    }
+
+    @Test
+    fun aPermanentLockedProfileInALockedGroupShowsTheGroupsFigure() {
+        val row = buildServerRowUiModel(
+            server = ServersCache(
+                guid = "guid-a",
+                profile = ProfileItem(configType = EConfigType.VMESS, remarks = "a"),
+                locked = true,
+            ),
+            subscriptionRemarks = "g",
+            affiliation = ServerAffiliationInfo(persistentLock = true, dataLimitBytes = 100, usedBytes = 5),
+            groupLock = GroupLockConfig(enabled = true, usedBytes = 4096),
+            sharedLockedUsedBytes = sharedUsageForLockedProfiles(
+                GroupLockConfig(enabled = true, usedBytes = 4096),
+                summedProfileUsedBytes = 5L,
+            ),
+        )
+        assertEquals(4096L, row.usage.usedBytes)
+    }
+
+    @Test
     fun ordinaryLockedProfileIgnoresSharedCounter() {
         val row = buildServerRowUiModel(
             server = ServersCache(

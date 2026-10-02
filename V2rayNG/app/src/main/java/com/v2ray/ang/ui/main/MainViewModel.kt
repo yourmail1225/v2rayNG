@@ -392,12 +392,17 @@ class MainViewModel(
             .groupBy({ it.profile.subscriptionId }, { affiliations[it.guid]?.usedBytes ?: 0L })
             .mapValues { it.value.sum() }
         return servers.map { server ->
+            val subscriptionId = server.profile.subscriptionId
+            val groupLock = groupLocks[subscriptionId]
             buildServerRowUiModel(
                 server = server,
-                subscriptionRemarks = subscriptionRemarks[server.profile.subscriptionId].orEmpty(),
+                subscriptionRemarks = subscriptionRemarks[subscriptionId].orEmpty(),
                 affiliation = affiliations[server.guid],
-                groupLock = groupLocks[server.profile.subscriptionId],
-                sharedLockedUsedBytes = sharedLockedUsed[server.profile.subscriptionId] ?: 0L,
+                groupLock = groupLock,
+                sharedLockedUsedBytes = sharedUsageForLockedProfiles(
+                    groupLock,
+                    sharedLockedUsed[subscriptionId] ?: 0L,
+                ),
             )
         }
     }

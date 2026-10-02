@@ -125,6 +125,23 @@ internal fun remainingDays(expiryEpochMinute: Long, nowEpochMinute: Long): Long 
     return (expiryEpochMinute - nowEpochMinute + 1439L) / 1440L
 }
 
+/**
+ * The subscription-wide consumed bytes a permanently locked profile's card should show.
+ *
+ * A locked group already accounts a whole subscription against one counter, seeded from
+ * the row's own reported usage and written back to the panel. Summing per-profile
+ * counters instead is a second tally that starts at zero and drifts away from the number
+ * the panel shows, so the group's own figure wins whenever the group is locked. Without
+ * a group lock the profile counters are the only usage recorded, so they are summed.
+ *
+ * @param groupLock The owning subscription's group lock, or null when it has none.
+ * @param summedProfileUsedBytes Sum of the permanently locked profiles' own counters.
+ */
+internal fun sharedUsageForLockedProfiles(
+    groupLock: GroupLockConfig?,
+    summedProfileUsedBytes: Long,
+): Long = if (groupLock?.enabled == true) groupLock.usedBytes else summedProfileUsedBytes
+
 internal fun buildServerRowUiModel(
     server: ServersCache,
     subscriptionRemarks: String,
