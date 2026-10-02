@@ -247,14 +247,15 @@ object CoreServiceManager {
      *
      * Runs off the connection path so a slow or unreachable row can never delay or fail
      * the session, and a reload is excluded because reloading the running config is not a
-     * new connection.
+     * new connection. The usage write also stamps the connection time in the row, which
+     * is what the panel shows as the last connection.
      */
     private fun onConnectionEstablished() {
         if (!ActivationManager.isActivated()) return
         connectionReportScope.launch {
             runCatching { AngConfigManager.updateConfigViaSubAll() }
                 .onFailure { LogUtil.e(AppConfig.TAG, "Connection refresh of subscriptions failed", it) }
-            ActivationManager.reportConnection()
+            ActivationManager.reportUsage()
         }
     }
 

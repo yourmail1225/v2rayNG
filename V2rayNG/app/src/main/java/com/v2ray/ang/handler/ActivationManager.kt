@@ -207,8 +207,8 @@ object ActivationManager {
     /**
      * Refreshes only the reported traffic on an already activated app, called whenever the
      * app comes up so a customer who keeps using the app shows current consumption in the
-     * panel without any action. Unchanged usage skips the write so a normal app start does
-     * not create a commit.
+     * panel without any action. Unchanged usage and an already recorded connection skip
+     * the write, so a normal app start does not create a commit.
      */
     fun reportUsage() {
         if (!isActivated()) return
@@ -225,18 +225,6 @@ object ActivationManager {
                 }
             }
         }
-    }
-
-    /**
-     * Records that the customer just brought the tunnel up, so the panel can show when the
-     * subscription was last in use rather than only when it was activated.
-     *
-     * Sent together with the traffic reading because both live in the same row and one
-     * write is cheaper than two; a customer whose usage has not moved still gets this
-     * stamp, which is the only new information a connection produces.
-     */
-    fun reportConnection() {
-        reportUsage()
     }
 
     /**

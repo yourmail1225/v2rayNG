@@ -303,13 +303,6 @@ class ActivationManagerTest {
     }
 
     @Test
-    fun reportConnectionIsSkippedWithoutToken() {
-        ActivationManager.markActivated(ActivationManager.MODE_CODE, "sa1234", "sa1234")
-        // Same no-token guard as reportUsage: a connect must never fail or write blind.
-        ActivationManager.reportConnection()
-    }
-
-    @Test
     fun rowUrlIsTheRawRowOfTheCode() {
         // The activated subscription stores this URL, so it must address the row file and
         // not the API or the repository root, and it must be usable as a subscription URL.
