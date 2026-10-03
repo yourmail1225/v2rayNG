@@ -631,4 +631,10 @@
     <string name="activation_error_limit">Для этого кода достигнут лимит активаций.</string>
     <string name="activation_error_no_write_token">Добавьте код конфигурации GitHub (Base64), чтобы использовать код с лимитом активаций.</string>
     <string name="activation_error_generic">Не удалось активировать.</string>
+    <string name="content_password_prompt_title">Требуется пароль</string>
+    <string name="content_password_prompt_message">Введите выданный вам пароль, чтобы продолжить.</string>
+    <string name="update_install_failed">Не удалось открыть установщик</string>
+    <string name="update_available_title">Доступно обновление</string>
+    <string name="update_available_message">Доступна версия %1$s. Обновить сейчас?</string>
+    <string name="update_download">Обновить</string>    <string name="update_download_failed">Не удалось скачать обновление</string>
 </resources>

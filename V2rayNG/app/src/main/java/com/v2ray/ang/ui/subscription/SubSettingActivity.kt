@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.extension.toast
@@ -54,6 +55,7 @@ import com.v2ray.ang.ui.compose.SelectListDialog
 import com.v2ray.ang.ui.compose.SettingsSwitchItem
 import com.v2ray.ang.ui.compose.verticalScrollbar
 import com.v2ray.ang.util.Utils
+import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -67,16 +69,24 @@ class SubSettingActivity : BaseComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The ViewModel owns the password gate; the editor is opened here once it
+        // confirms the action may run.
+        lifecycleScope.launch {
+            viewModel.readyToAddSubscription.collect {
+                startActivity(Intent(this@SubSettingActivity, SubEditActivity::class.java))
+            }
+        }
     }
 
     @Composable
     override fun ScreenContent() {
         val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+        val addPasswordPrompt by viewModel.addPasswordPrompt.collectAsStateWithLifecycle()
         SubSettingScreen(
             viewModel = viewModel,
             isLoading = isLoading,
             onBackClick = { finish() },
-            onAddClick = { startActivity(Intent(this, SubEditActivity::class.java)) },
+            onAddClick = { viewModel.requestAddSubscription() },
             onSubUpdate = { viewModel.updateSubscriptions() },
             onEditSub = { subId ->
                 startActivity(Intent(this, SubEditActivity::class.java).putExtra("subId", subId))
@@ -88,6 +98,15 @@ class SubSettingActivity : BaseComponentActivity() {
                 toast(getString(R.string.toast_success))
             }
         )
+        if (addPasswordPrompt) {
+            PasswordVerifyDialog(
+                title = stringResource(R.string.content_password_prompt_title),
+                message = stringResource(R.string.content_password_prompt_message),
+                verify = { input -> viewModel.verifyAddPassword(input) },
+                onVerified = { viewModel.dismissAddPassword() },
+                onDismiss = { viewModel.dismissAddPassword() },
+            )
+        }
     }
 
     override fun onResume() {

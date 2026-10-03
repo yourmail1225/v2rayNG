@@ -19,12 +19,15 @@ import com.v2ray.ang.extension.delay
 import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.extension.matchesPattern
 import com.v2ray.ang.extension.moveItem
+import com.v2ray.ang.handler.ActivationManager
 import com.v2ray.ang.handler.SpeedtestManager
+import com.v2ray.ang.handler.UpdateCheckerManager
 import com.v2ray.ang.service.OpenVpnEngine
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.LockDeniedMessage
 import com.v2ray.ang.util.LockEvaluator
+import com.v2ray.ang.util.PasswordGate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,9 +35,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -43,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.PatternSyntaxException
 
@@ -86,6 +93,18 @@ class MainViewModel(
 
     private val testRequests = MainTestRequests()
     private var bulkTestJob: Job? = null
+
+    /** Downloaded APK the Activity should hand to the system installer. */
+    private val updateInstallRequests = MutableSharedFlow<File>(extraBufferCapacity = 1)
+    val installUpdate: SharedFlow<File> = updateInstallRequests.asSharedFlow()
+
+    /**
+     * Import the ViewModel cleared to run: either the panel set no password, or the
+     * customer entered the right one. The Activity owns the launchers, so it performs
+     * the work when it receives the action here.
+     */
+    private val readyGuardedActions = MutableSharedFlow<GuardedAction>(extraBufferCapacity = 1)
+    val runGuardedAction: SharedFlow<GuardedAction> = readyGuardedActions.asSharedFlow()
 
     private val initialPageReady = CompletableDeferred<Unit>()
 
@@ -227,7 +246,6 @@ class MainViewModel(
             is MainAction.SelectServer -> updateSelectedGuid(action.guid)
             is MainAction.RemoveServer -> removeServerAndRefresh(action.guid)
             is MainAction.Search -> filterConfig(action.query)
-            is MainAction.ImportBatchConfig -> importBatchConfig(action.configText)
             MainAction.LocateHandled -> consumeLocateTarget()
             is MainAction.ToggleProfileLock -> toggleProfileLock(action.guid)
             MainAction.ExportLocked -> exportLockedAsync()
@@ -247,6 +265,18 @@ class MainViewModel(
 
             MainAction.DismissLockNotice -> {
                 _uiState.update { it.copy(lockNotice = null) }
+            }
+            is MainAction.RequestImport -> requestGuardedAction(action.action)
+            is MainAction.ImportBatchConfig ->
+                requestGuardedAction(GuardedAction.ImportBatchConfig(action.configText))
+            is MainAction.VerifyGuardedPassword -> verifyGuardedPassword(action.password)
+            MainAction.DismissGuardedPassword -> {
+                _uiState.update { it.copy(pendingGuardedAction = null) }
+            }
+            MainAction.CheckAppUpdate -> checkAppUpdate()
+            MainAction.DownloadAppUpdate -> downloadAppUpdate()
+            MainAction.DismissAppUpdate -> {
+                _uiState.update { it.copy(appUpdateNotice = null) }
             }
             is MainAction.ShareQRCode -> {
                 val bitmap = dataSource.share2QRCode(action.guid)
@@ -268,11 +298,6 @@ class MainViewModel(
 
             MainAction.ToggleService,
             MainAction.TestCurrentServer,
-            MainAction.ImportQRcode,
-            MainAction.ImportClipboard,
-            MainAction.ImportConfigLocal,
-            MainAction.ImportOpenVpnFile,
-            is MainAction.ImportManually,
             MainAction.RestartService,
             MainAction.LocateSelectedServer,
             is MainAction.EditServer,
@@ -498,6 +523,90 @@ class MainViewModel(
     }
 
     // ---------- Business actions (coroutine-based) ----------
+
+/**
+     * Holds an import until the panel's password is entered, or lets it through when the
+     * panel set none. The password is asked once per attempt rather than cached for the
+     * session, so a customer who does not know it cannot add content.
+     */
+    private fun requestGuardedAction(action: GuardedAction) {
+        if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
+            _uiState.update { it.copy(pendingGuardedAction = action) }
+        } else {
+            releaseGuardedAction(action)
+        }
+    }
+
+    /**
+     * Checks the entered password and runs the held action when it is right. A wrong
+     * answer reports false and leaves the held action in place.
+     */
+    fun verifyGuardedPassword(password: String): Boolean {
+        if (!PasswordGate.verify(password, ActivationManager.activationPassword())) return false
+        val held = _uiState.value.pendingGuardedAction ?: return false
+        _uiState.update { it.copy(pendingGuardedAction = null) }
+        releaseGuardedAction(held)
+        return true
+    }
+
+    /**
+     * Runs a cleared action. Batch text import is a repository write the ViewModel owns,
+     * so it stays here; the rest need an Activity launcher and travel over the flow.
+     */
+    private fun releaseGuardedAction(action: GuardedAction) {
+        when (action) {
+            is GuardedAction.ImportBatchConfig -> importBatchConfig(action.configText)
+            else -> readyGuardedActions.tryEmit(action)
+        }
+    }
+
+    /**
+     * Reads the update notice the panel published. It runs after the first page is up
+     * and never blocks startup, so an unreachable repository only means no popup.
+     */
+    private fun checkAppUpdate() {
+        viewModelScope.launch {
+            try {
+                val notice = withContext(ioDispatcher) { UpdateCheckerManager.checkPanelUpdate() }
+                if (notice != null) _uiState.update { it.copy(appUpdateNotice = notice) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                LogUtil.e(AppConfig.TAG, "Panel update check failed", e)
+            }
+        }
+    }
+
+    /**
+     * Downloads the published APK to the app's own cache so the installer can be
+     * handed a content:// uri through the existing FileProvider. The Activity starts
+     * the installer; the file is produced here off the main thread.
+     */
+    private fun downloadAppUpdate() {
+        val notice = uiState.value.appUpdateNotice ?: return
+        if (uiState.value.isDownloadingUpdate) return
+        _uiState.update { it.copy(isDownloadingUpdate = true) }
+        viewModelScope.launch {
+            try {
+                val file = withContext(ioDispatcher) {
+                    UpdateCheckerManager.downloadPanelUpdate(notice, app)
+                }
+                if (file == null) {
+                    toastError(R.string.update_download_failed)
+                } else {
+                    updateInstallRequests.tryEmit(file)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                LogUtil.e(AppConfig.TAG, "Panel update download failed", e)
+                toastError(R.string.update_download_failed)
+            } finally {
+                _uiState.update { it.copy(isDownloadingUpdate = false) }
+            }
+        }
+    }
+
     private fun importBatchConfig(configText: String) {
         launchLoading {
             withContext(ioDispatcher) {

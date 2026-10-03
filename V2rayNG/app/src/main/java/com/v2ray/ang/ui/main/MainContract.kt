@@ -53,8 +53,30 @@ data class MainUiState(
     val shareQRCodeBitmap: android.graphics.Bitmap? = null,
     val lockNotice: String? = null,
     val groupLockEditor: GroupLockEditorUi? = null,
-    val profileLockEditor: ProfileLockEditorUi? = null
+    val profileLockEditor: ProfileLockEditorUi? = null,
+    /** Import or add-subscription action waiting for the owner's password. */
+    val pendingGuardedAction: GuardedAction? = null,
+    val appUpdateNotice: com.v2ray.ang.dto.AppUpdateNotice? = null,
+    val isDownloadingUpdate: Boolean = false
 )
+
+/**
+ * Work the customer may only start with the password the panel shipped. A held action
+ * is replayed once the password verifies, so the user does not pick it twice.
+ */
+sealed interface GuardedAction {
+    data object ImportQRcode : GuardedAction
+    data object ImportClipboard : GuardedAction
+    data object ImportConfigLocal : GuardedAction
+    data object ImportOpenVpnFile : GuardedAction
+    data class ImportManually(val type: Int) : GuardedAction
+
+    /** Batch text import; the ViewModel owns the repository write for this one. */
+    data class ImportBatchConfig(val configText: String) : GuardedAction
+
+    /** Reserved for the subscription editor, which its own ViewModel gates. */
+    data object AddSubscription : GuardedAction
+}
 
 /**
  * All possible user interaction intents
@@ -74,11 +96,6 @@ sealed interface MainAction {
     data object UpdateSubscriptions : MainAction
     data object ExportAll : MainAction
 
-    data object ImportQRcode : MainAction
-    data object ImportClipboard : MainAction
-    data object ImportConfigLocal : MainAction
-    data object ImportOpenVpnFile : MainAction
-    data class ImportManually(val type: Int) : MainAction
     data object RestartService : MainAction
     data object LocateSelectedServer : MainAction
 
@@ -138,6 +155,21 @@ sealed interface MainAction {
     data class ResetProfileUsedBytes(val guid: String) : MainAction
     data object DismissProfileLockEditor : MainAction
     data object DismissLockNotice : MainAction
+
+    /**
+     * Starts an import only when the panel set no password. With a password set the
+     * action is held in [MainUiState.pendingGuardedAction] until it verifies.
+     */
+    data class RequestImport(val action: GuardedAction) : MainAction
+
+    /** Checks the configured password and runs the held action when it matches. */
+    data class VerifyGuardedPassword(val password: String) : MainAction
+    data object DismissGuardedPassword : MainAction
+
+    /** Checks the panel's update notice and offers it when it is newer. */
+    data object CheckAppUpdate : MainAction
+    data object DownloadAppUpdate : MainAction
+    data object DismissAppUpdate : MainAction
 
     data object LocateHandled : MainAction
 }

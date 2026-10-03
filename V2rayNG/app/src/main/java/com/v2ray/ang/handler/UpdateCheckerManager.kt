@@ -1,8 +1,10 @@
 package com.v2ray.ang.handler
 
+import android.content.Context
 import android.os.Build
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
+import com.v2ray.ang.dto.AppUpdateNotice
 import com.v2ray.ang.dto.CheckUpdateResult
 import com.v2ray.ang.dto.GitHubRelease
 import com.v2ray.ang.dto.UrlContentRequest
@@ -12,8 +14,59 @@ import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 object UpdateCheckerManager {
+
+    /** File the panel publishes at the repository root for the customer app. */
+    private const val PANEL_UPDATE_FILE = "update.json"
+
+    /**
+     * Update notice the owner published through the panel, or null when the panel
+     * offers none, the file cannot be read, or it is not newer than this build.
+     *
+     * A failure is logged and treated as "no update" so an unreachable repository
+     * never blocks the app from starting.
+     */
+    suspend fun checkPanelUpdate(): AppUpdateNotice? = withContext(Dispatchers.IO) {
+        if (!ActivationManager.isActivated()) return@withContext null
+        val url = ActivationManager.repoRootUrl() + PANEL_UPDATE_FILE
+        val response = try {
+            HttpUtil.getUrlContent(UrlContentRequest(url = url, timeout = 5000))
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Panel update check failed", e)
+            return@withContext null
+        }
+        if (response.isNullOrEmpty()) return@withContext null
+        val notice = JsonUtil.fromJsonSafe(response, AppUpdateNotice::class.java)
+        if (notice == null || !notice.isNewerThan(BuildConfig.VERSION_NAME)) {
+            return@withContext null
+        }
+        LogUtil.i(AppConfig.TAG, "Panel published version: ${notice.version}")
+        notice
+    }
+
+    /**
+     * Downloads [notice] into the app's own cache directory and returns the file, or
+     * null when the download failed. The cache path is what the app's FileProvider
+     * already exposes, so the downloaded APK can be handed to the system installer
+     * without granting any world-readable location.
+     *
+     * Must run off the main thread.
+     */
+    fun downloadPanelUpdate(notice: AppUpdateNotice, context: Context): File? {
+        val target = File(context.cacheDir, "app-update.apk")
+        val ok = HttpUtil.downloadToFile(
+            UrlContentRequest(url = notice.url, timeout = 60_000),
+            target
+        )
+        if (!ok) {
+            target.delete()
+            return null
+        }
+        return target
+    }
+
     suspend fun checkForUpdate(includePreRelease: Boolean = false): CheckUpdateResult = withContext(Dispatchers.IO) {
         val url = if (includePreRelease) {
             AppConfig.APP_API_URL
@@ -61,7 +114,7 @@ object UpdateCheckerManager {
             "Found new version: $latestVersion (current: ${BuildConfig.VERSION_NAME})"
         )
 
-        return@withContext if (compareVersions(latestVersion, BuildConfig.VERSION_NAME) > 0) {
+        return@withContext if (AppUpdateNotice.compareVersions(latestVersion, BuildConfig.VERSION_NAME) > 0) {
             val downloadUrl = getDownloadUrl(latestRelease, Build.SUPPORTED_ABIS[0])
             CheckUpdateResult(
                 hasUpdate = true,
@@ -73,18 +126,6 @@ object UpdateCheckerManager {
         } else {
             CheckUpdateResult(hasUpdate = false)
         }
-    }
-
-    private fun compareVersions(version1: String, version2: String): Int {
-        val v1 = version1.split(".")
-        val v2 = version2.split(".")
-
-        for (i in 0 until maxOf(v1.size, v2.size)) {
-            val num1 = if (i < v1.size) v1[i].toInt() else 0
-            val num2 = if (i < v2.size) v2[i].toInt() else 0
-            if (num1 != num2) return num1 - num2
-        }
-        return 0
     }
 
     private fun getDownloadUrl(release: GitHubRelease, abi: String): String {

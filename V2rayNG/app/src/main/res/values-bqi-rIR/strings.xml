@@ -625,4 +625,10 @@
     <string name="activation_error_limit">سهمیه فعال‌سازی برای ای کد پر بیّه.</string>
     <string name="activation_error_no_write_token">کد فعال‌سازی دارای محدودیت اَ باز بوخانین، کد پیکربندی GitHub (Base64) اَ زیات بوکونین.</string>
     <string name="activation_error_generic">فعال‌سازی انجام نبی.</string>
+    <string name="content_password_prompt_title">کلمهٔ رمز لازمه</string>
+    <string name="content_password_prompt_message">برای ادامه، رمزی که به شما دیه شده را وارد کنین.</string>
+    <string name="update_install_failed">باز کردن نصب‌کننده ناموفق بود</string>
+    <string name="update_available_title">به‌روزرسانی موجوده</string>
+    <string name="update_available_message">نسخهٔ %1$s موجوده. الان به‌روزرسانی بکنین؟</string>
+    <string name="update_download">به‌روزرسانی</string>    <string name="update_download_failed">دالوستن به‌روزرسانی ناموفق بود</string>
 </resources>

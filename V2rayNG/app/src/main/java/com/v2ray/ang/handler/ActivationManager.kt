@@ -235,6 +235,26 @@ object ActivationManager {
     fun rowUrl(code: String): String = rawRowUrl(code.trim())
 
     /**
+     * Raw base URL of the configured repository, without the row directory. The panel
+     * publishes files other than rows there, such as the app-update notice the app
+     * reads on start.
+     */
+    fun repoRootUrl(): String =
+        "https://raw.githubusercontent.com/${repo()}/${branch()}/"
+
+    /**
+     * Password the panel shipped for the activated subscription, empty when the row
+     * carried none or the app is not activated. It gates importing a config and
+     * adding a subscription, so only the owner's row decides whether a customer is
+     * asked for one.
+     */
+    fun activationPassword(): String {
+        if (!isActivated()) return ""
+        val sub = MmkvManager.decodeSubscription(savedSubscriptionId()) ?: return ""
+        return sub.password.orEmpty()
+    }
+
+    /**
      * Reads the row together with its blob sha in one Contents API call and writes the
      * result of [transform] back under that same sha. Reading the content and the sha
      * separately would let a panel edit in between be overwritten, because GitHub only

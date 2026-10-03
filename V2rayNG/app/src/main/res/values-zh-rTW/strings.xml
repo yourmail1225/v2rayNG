@@ -622,4 +622,10 @@
     <string name="activation_error_limit">此啟用碼的啟用次數已達上限。</string>
     <string name="activation_error_no_write_token">請新增 GitHub 設定代碼 (Base64) 以使用帶啟用次數上限的啟用碼。</string>
     <string name="activation_error_generic">啟用失敗。</string>
+    <string name="content_password_prompt_title">需要密碼</string>
+    <string name="content_password_prompt_message">請輸入提供給您的密碼以繼續。</string>
+    <string name="update_install_failed">無法開啟安裝程式</string>
+    <string name="update_available_title">有可用更新</string>
+    <string name="update_available_message">版本 %1$s 可用。是否立即更新？</string>
+    <string name="update_download">更新</string>    <string name="update_download_failed">更新下載失敗</string>
 </resources>

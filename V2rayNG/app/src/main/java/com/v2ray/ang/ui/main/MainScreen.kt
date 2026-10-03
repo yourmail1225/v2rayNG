@@ -25,10 +25,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ProfileItem
+import com.v2ray.ang.ui.compose.ConfirmDialog
 import com.v2ray.ang.ui.compose.LocalDarkTheme
+import com.v2ray.ang.ui.compose.PasswordVerifyDialog
 import com.v2ray.ang.ui.compose.QRCodeDialog
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -190,6 +194,25 @@ fun MainScreen(
     if (shareQRCodeBitmap != null) {
         QRCodeDialog(bitmap = shareQRCodeBitmap, onDismiss = { onAction(MainAction.DismissQRCodeDialog) })
     }
+    // The ViewModel clears pendingGuardedAction once the password is right, which
+    // removes this dialog; a wrong answer keeps it open for another attempt.
+    if (uiState.pendingGuardedAction != null) {
+        PasswordVerifyDialog(
+            title = stringResource(R.string.content_password_prompt_title),
+            message = stringResource(R.string.content_password_prompt_message),
+            verify = { input -> mainViewModel.verifyGuardedPassword(input) },
+            onVerified = {},
+            onDismiss = { onAction(MainAction.DismissGuardedPassword) },
+        )
+    }
+    uiState.appUpdateNotice?.let { notice ->
+        AppUpdateDialog(
+            version = notice.version,
+            notes = notice.notes,
+            onConfirm = { onAction(MainAction.DownloadAppUpdate) },
+            onDismiss = { onAction(MainAction.DismissAppUpdate) },
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -329,3 +352,30 @@ private data class ShareMethodTarget(
     val more: Boolean,
     val isLocked: Boolean,
 )
+
+/**
+ * Offers the update the owner published. Confirming downloads the APK and hands it to
+ * the system installer; dismissing keeps the current version.
+ */
+@Composable
+private fun AppUpdateDialog(
+    version: String,
+    notes: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmDialog(
+        title = stringResource(R.string.update_available_title),
+        message = buildString {
+            append(stringResource(R.string.update_available_message, version))
+            if (notes.isNotBlank()) {
+                append("\n\n")
+                append(notes)
+            }
+        },
+        confirmText = stringResource(R.string.update_download),
+        dismissText = stringResource(R.string.action_close),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
+}

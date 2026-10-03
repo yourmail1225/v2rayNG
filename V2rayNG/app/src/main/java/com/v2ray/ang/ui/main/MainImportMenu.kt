@@ -11,22 +11,22 @@ import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.ui.compose.AppDropdownMenuItems
 import com.v2ray.ang.ui.compose.SelectListDialog
 
-private enum class ImportMenuAction(@StringRes val labelRes: Int, val action: MainAction) {
-    QRCode(R.string.menu_item_import_config_qrcode, MainAction.ImportQRcode),
-    Clipboard(R.string.menu_item_import_config_clipboard, MainAction.ImportClipboard),
-    LocalFile(R.string.menu_item_import_config_local, MainAction.ImportConfigLocal),
-    OpenVpnFile(R.string.menu_item_import_config_file_openvpn, MainAction.ImportOpenVpnFile),
-    PolicyGroup(R.string.menu_item_import_config_policy_group, MainAction.ImportManually(EConfigType.POLICYGROUP.value)),
-    ProxyChain(R.string.menu_item_import_config_proxy_chain, MainAction.ImportManually(EConfigType.PROXYCHAIN.value)),
-    Vmess(R.string.menu_item_import_config_manually_vmess, MainAction.ImportManually(EConfigType.VMESS.value)),
-    Vless(R.string.menu_item_import_config_manually_vless, MainAction.ImportManually(EConfigType.VLESS.value)),
-    Shadowsocks(R.string.menu_item_import_config_manually_ss, MainAction.ImportManually(EConfigType.SHADOWSOCKS.value)),
-    Socks(R.string.menu_item_import_config_manually_socks, MainAction.ImportManually(EConfigType.SOCKS.value)),
-    Http(R.string.menu_item_import_config_manually_http, MainAction.ImportManually(EConfigType.HTTP.value)),
-    Trojan(R.string.menu_item_import_config_manually_trojan, MainAction.ImportManually(EConfigType.TROJAN.value)),
-    WireGuard(R.string.menu_item_import_config_manually_wireguard, MainAction.ImportManually(EConfigType.WIREGUARD.value)),
-    Hysteria2(R.string.menu_item_import_config_manually_hysteria2, MainAction.ImportManually(EConfigType.HYSTERIA2.value)),
-    OpenVPN(R.string.menu_item_import_config_manually_openvpn, MainAction.ImportManually(EConfigType.OPENVPN.value))
+private enum class ImportMenuAction(@StringRes val labelRes: Int, val action: GuardedAction) {
+    QRCode(R.string.menu_item_import_config_qrcode, GuardedAction.ImportQRcode),
+    Clipboard(R.string.menu_item_import_config_clipboard, GuardedAction.ImportClipboard),
+    LocalFile(R.string.menu_item_import_config_local, GuardedAction.ImportConfigLocal),
+    OpenVpnFile(R.string.menu_item_import_config_file_openvpn, GuardedAction.ImportOpenVpnFile),
+    PolicyGroup(R.string.menu_item_import_config_policy_group, GuardedAction.ImportManually(EConfigType.POLICYGROUP.value)),
+    ProxyChain(R.string.menu_item_import_config_proxy_chain, GuardedAction.ImportManually(EConfigType.PROXYCHAIN.value)),
+    Vmess(R.string.menu_item_import_config_manually_vmess, GuardedAction.ImportManually(EConfigType.VMESS.value)),
+    Vless(R.string.menu_item_import_config_manually_vless, GuardedAction.ImportManually(EConfigType.VLESS.value)),
+    Shadowsocks(R.string.menu_item_import_config_manually_ss, GuardedAction.ImportManually(EConfigType.SHADOWSOCKS.value)),
+    Socks(R.string.menu_item_import_config_manually_socks, GuardedAction.ImportManually(EConfigType.SOCKS.value)),
+    Http(R.string.menu_item_import_config_manually_http, GuardedAction.ImportManually(EConfigType.HTTP.value)),
+    Trojan(R.string.menu_item_import_config_manually_trojan, GuardedAction.ImportManually(EConfigType.TROJAN.value)),
+    WireGuard(R.string.menu_item_import_config_manually_wireguard, GuardedAction.ImportManually(EConfigType.WIREGUARD.value)),
+    Hysteria2(R.string.menu_item_import_config_manually_hysteria2, GuardedAction.ImportManually(EConfigType.HYSTERIA2.value)),
+    OpenVPN(R.string.menu_item_import_config_manually_openvpn, GuardedAction.ImportManually(EConfigType.OPENVPN.value))
 }
 
 enum class MainMoreMenuAction(@StringRes val labelRes: Int) {
@@ -98,7 +98,7 @@ internal fun serverMenuActions(
 fun ImportMenuContent(onAction: (MainAction) -> Unit) = AppDropdownMenuItems(
     items = ImportMenuAction.entries,
     labelRes = { it.labelRes },
-    onSelected = { onAction(it.action) }
+    onSelected = { onAction(MainAction.RequestImport(it.action)) }
 )
 
 @Composable

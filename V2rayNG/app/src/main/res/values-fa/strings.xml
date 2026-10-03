@@ -625,4 +625,10 @@
     <string name="activation_error_limit">سقف فعال‌سازی برای این کد پر شده است.</string>
     <string name="activation_error_no_write_token">برای استفاده از کدی با سقف فعال‌سازی، کد پیکربندی GitHub (Base64) را اضافه کنید.</string>
     <string name="activation_error_generic">فعال‌سازی ناموفق بود.</string>
+    <string name="content_password_prompt_title">رمز عبور لازم است</string>
+    <string name="content_password_prompt_message">برای ادامه، رمزی که به شما داده شده است را وارد کنید.</string>
+    <string name="update_install_failed">باز کردن نصب‌کننده ناموفق بود</string>
+    <string name="update_available_title">به‌روزرسانی موجود است</string>
+    <string name="update_available_message">نسخهٔ %1$s در دسترس است. هم‌اکنون به‌روزرسانی می‌کنید؟</string>
+    <string name="update_download">به‌روزرسانی</string>    <string name="update_download_failed">دانلود به‌روزرسانی ناموفق بود</string>
 </resources>

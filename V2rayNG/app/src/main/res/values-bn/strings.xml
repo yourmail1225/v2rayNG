@@ -625,4 +625,10 @@
     <string name="activation_error_limit">এই কোডের অ্যাক্টিভেশন সীমা পূর্ণ হয়ে গেছে।</string>
     <string name="activation_error_no_write_token">অ্যাক্টিভেশন সীমাযুক্ত কোড ব্যবহার করতে GitHub কনফিগারেশন কোড (Base64) যোগ করুন।</string>
     <string name="activation_error_generic">সক্রিয়করণ ব্যর্থ হয়েছে।</string>
+    <string name="content_password_prompt_title">পাসওয়ার্ড প্রয়োজন</string>
+    <string name="content_password_prompt_message">চালিয়ে যেতে আপনাকে দেওয়া পাসওয়ার্ডটি লিখুন।</string>
+    <string name="update_install_failed">ইনস্টলার খোলা যায়নি</string>
+    <string name="update_available_title">আপডেট উপলব্ধ</string>
+    <string name="update_available_message">সংস্করণ %1$s উপলব্ধ। এখনই আপডেট করবেন?</string>
+    <string name="update_download">আপডেট</string>    <string name="update_download_failed">আপডেট ডাউনলোড ব্যর্থ হয়েছে</string>
 </resources>

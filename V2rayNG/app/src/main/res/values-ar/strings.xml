@@ -637,4 +637,10 @@
     <string name="activation_error_limit">بلغ هذا الرمز حد مرات التفعيل المسموح.</string>
     <string name="activation_error_no_write_token">أضف رمز إعدادات GitHub (Base64) لاستخدام رمز له حد تفعيلات.</string>
     <string name="activation_error_generic">فشل التفعيل.</string>
+    <string name="content_password_prompt_title">كلمة المرور مطلوبة</string>
+    <string name="content_password_prompt_message">أدخل كلمة المرور التي فُصلت لك للمتابعة.</string>
+    <string name="update_install_failed">تعذّر فتح المُثبِّت</string>
+    <string name="update_available_title">يتوفر تحديث</string>
+    <string name="update_available_message">الإصدار %1$s متاح. هل تريد التحديث الآن؟</string>
+    <string name="update_download">تحديث</string>    <string name="update_download_failed">فشل تنزيل التحديث</string>
 </resources>

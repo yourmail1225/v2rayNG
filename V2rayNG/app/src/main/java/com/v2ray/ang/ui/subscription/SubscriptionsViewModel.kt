@@ -9,6 +9,7 @@ import com.v2ray.ang.dto.SubscriptionUpdateMessage
 import com.v2ray.ang.dto.entities.SubscriptionCache
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.extension.moveItem
+import com.v2ray.ang.handler.ActivationManager
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
@@ -16,12 +17,16 @@ import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.PasswordGate
 import com.v2ray.ang.util.QRCodeDecoder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +40,14 @@ class SubscriptionsViewModel(application: Application) : BaseViewModel(applicati
 
     private val _subsFlow = MutableStateFlow(subscriptions.toList())
     val subsFlow: StateFlow<List<SubscriptionCache>> = _subsFlow.asStateFlow()
+
+    /** Whether the add-subscription action is waiting for the panel's password. */
+    private val _addPasswordPrompt = MutableStateFlow(false)
+    val addPasswordPrompt: StateFlow<Boolean> = _addPasswordPrompt.asStateFlow()
+
+    /** Signals that adding a subscription may go ahead; the Activity opens the editor. */
+    private val readyAddSubscription = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val readyToAddSubscription: SharedFlow<Unit> = readyAddSubscription.asSharedFlow()
 
     fun getAll(): List<SubscriptionCache> = subscriptions.toList()
 
@@ -84,6 +97,32 @@ class SubscriptionsViewModel(application: Application) : BaseViewModel(applicati
             SettingsChangeManager.makeSetupGroupTab()
             _subsFlow.value = subscriptions.toList()
         }
+    }
+
+    // ---------- Add-subscription password gate ----------
+
+    /**
+     * Asks for the panel's password before adding a subscription, or lets the action
+     * through when the panel set none. The password is checked per attempt, not cached
+     * for the session, so a customer who does not know it cannot add one.
+     */
+    fun requestAddSubscription() {
+        if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
+            _addPasswordPrompt.value = true
+        } else {
+            readyAddSubscription.tryEmit(Unit)
+        }
+    }
+
+    /** Whether [input] is the password the panel shipped; a wrong answer keeps the dialog. */
+    fun verifyAddPassword(input: String): Boolean {
+        if (!PasswordGate.verify(input, ActivationManager.activationPassword())) return false
+        readyAddSubscription.tryEmit(Unit)
+        return true
+    }
+
+    fun dismissAddPassword() {
+        _addPasswordPrompt.value = false
     }
 
     fun updateSubscriptions() {

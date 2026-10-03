@@ -626,4 +626,10 @@
     <string name="activation_error_limit">This code has reached its activation limit.</string>
     <string name="activation_error_no_write_token">Add the GitHub configuration code (Base64) to use a code with an activation limit.</string>
     <string name="activation_error_generic">Activation failed.</string>
+    <string name="content_password_prompt_title">Password required</string>
+    <string name="content_password_prompt_message">Enter the password you were given to continue.</string>
+    <string name="update_install_failed">Failed to open the installer</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">Version %1$s is available. Update now?</string>
+    <string name="update_download">Update</string>    <string name="update_download_failed">Downloading the update failed</string>
 </resources>

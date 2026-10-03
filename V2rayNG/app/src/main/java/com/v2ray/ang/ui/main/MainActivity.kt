@@ -56,6 +56,7 @@ import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class MainActivity : HelperBaseComponentActivity() {
 
@@ -105,6 +106,9 @@ class MainActivity : HelperBaseComponentActivity() {
             mainViewModel.refreshUiSettings()
             mainViewModel.onAction(MainAction.RefreshGroups)
             reportUsageAsync()
+            // A customer who activated just now has a row, and therefore a repository
+            // to read the update notice from.
+            mainViewModel.onAction(MainAction.CheckAppUpdate)
         }
 
     private var activationLaunched = false
@@ -122,11 +126,45 @@ class MainActivity : HelperBaseComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        collectViewModelEffects()
         mainViewModel.onAction(MainAction.Initialize)
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
         ensureActivation()
         reportUsageAsync()
+        mainViewModel.onAction(MainAction.CheckAppUpdate)
+    }
+
+    /**
+     * The ViewModel owns the password gate and the update download, but the launchers,
+     * the file picker, and the installer belong to the Activity.
+     */
+    private fun collectViewModelEffects() {
+        lifecycleScope.launch {
+            mainViewModel.runGuardedAction.collect { runGuardedImport(it) }
+        }
+        lifecycleScope.launch {
+            mainViewModel.installUpdate.collect { installUpdate(it) }
+        }
+    }
+
+    /**
+     * Hands the downloaded APK to the system installer. The file lives in the app's own
+     * cache, which the existing FileProvider already exposes, so no world-readable
+     * location is involved.
+     */
+    private fun installUpdate(file: File) {
+        val uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".cache", file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to open the APK installer", e)
+            toastError(R.string.update_install_failed)
+        }
     }
 
     @Composable
@@ -138,11 +176,7 @@ class MainActivity : HelperBaseComponentActivity() {
                 when (action) {
                     MainAction.ToggleService -> handleFabAction()
                     MainAction.TestCurrentServer -> handleLayoutTestClick()
-                    MainAction.ImportQRcode -> importQRcode()
-                    MainAction.ImportClipboard -> importClipboard()
-                    MainAction.ImportConfigLocal -> importConfigLocal()
-                    MainAction.ImportOpenVpnFile -> importOpenVpnFile()
-                    is MainAction.ImportManually -> importManually(action.type)
+                    is MainAction.RequestImport -> requestGuardedImport(action.action)
                     MainAction.RestartService -> LauncherManager.restartServiceOrStart(this, ::requestServiceStart)
                     MainAction.LocateSelectedServer -> mainViewModel.triggerLocateSelectedServer()
                     is MainAction.SelectServer -> setSelectServer(action.guid)
@@ -165,6 +199,27 @@ class MainActivity : HelperBaseComponentActivity() {
             },
             onNavigate = { route -> navigateTo(route) },
         )
+    }
+
+    /**
+     * Runs the import the user picked, unless the panel set a password for this
+     * customer, in which case the ViewModel holds it until the password verifies.
+     */
+    private fun requestGuardedImport(action: GuardedAction) {
+        mainViewModel.onAction(MainAction.RequestImport(action))
+    }
+
+    /** Performs the import the ViewModel cleared to run. */
+    private fun runGuardedImport(action: GuardedAction) {
+        when (action) {
+            GuardedAction.ImportQRcode -> importQRcode()
+            GuardedAction.ImportClipboard -> importClipboard()
+            GuardedAction.ImportConfigLocal -> importConfigLocal()
+            GuardedAction.ImportOpenVpnFile -> importOpenVpnFile()
+            is GuardedAction.ImportManually -> importManually(action.type)
+            is GuardedAction.ImportBatchConfig,
+            GuardedAction.AddSubscription -> Unit
+        }
     }
 
     private fun shareToClipboard(guid: String): Boolean =

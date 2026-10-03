@@ -622,4 +622,10 @@
     <string name="activation_error_limit">Mã này đã đạt giới hạn kích hoạt.</string>
     <string name="activation_error_no_write_token">Thêm mã cấu hình GitHub (Base64) để dùng mã có giới hạn kích hoạt.</string>
     <string name="activation_error_generic">Kích hoạt thất bại.</string>
+    <string name="content_password_prompt_title">Cần mật khẩu</string>
+    <string name="content_password_prompt_message">Nhập mật khẩu được cấp để tiếp tục.</string>
+    <string name="update_install_failed">Không thể mở trình cài đặt</string>
+    <string name="update_available_title">Đã có bản cập nhật</string>
+    <string name="update_available_message">Phiên bản %1$s đã có. Cập nhật ngay?</string>
+    <string name="update_download">Cập nhật</string>    <string name="update_download_failed">Tải bản cập nhật thất bại</string>
 </resources>
