@@ -7,7 +7,6 @@ import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.dto.AppUpdateNotice
 import com.v2ray.ang.dto.CheckUpdateResult
 import com.v2ray.ang.dto.UrlContentRequest
-import com.v2ray.ang.extension.isGithubContentUrl
 import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.LogUtil
