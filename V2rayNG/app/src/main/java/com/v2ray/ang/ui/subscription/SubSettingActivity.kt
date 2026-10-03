@@ -100,8 +100,6 @@ class SubSettingActivity : BaseComponentActivity() {
         )
         if (addPasswordPrompt) {
             PasswordVerifyDialog(
-                title = stringResource(R.string.content_password_prompt_title),
-                message = stringResource(R.string.content_password_prompt_message),
                 verify = { input -> viewModel.verifyAddPassword(input) },
                 onVerified = { viewModel.dismissAddPassword() },
                 onDismiss = { viewModel.dismissAddPassword() },

@@ -198,8 +198,6 @@ fun MainScreen(
     // removes this dialog; a wrong answer keeps it open for another attempt.
     if (uiState.pendingGuardedAction != null) {
         PasswordVerifyDialog(
-            title = stringResource(R.string.content_password_prompt_title),
-            message = stringResource(R.string.content_password_prompt_message),
             verify = { input -> mainViewModel.verifyGuardedPassword(input) },
             onVerified = {},
             onDismiss = { onAction(MainAction.DismissGuardedPassword) },

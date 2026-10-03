@@ -181,7 +181,7 @@ fun InputDialog(
  */
 @Composable
 fun PasswordVerifyDialog(
-    title: String,
+    title: String = "",
     message: String? = null,
     verify: (String) -> Boolean,
     onVerified: () -> Unit,
@@ -197,8 +197,8 @@ fun PasswordVerifyDialog(
         }
     }
     InputDialog(
-        title = title,
-        message = message,
+        title = "",
+        message = null,
         fields = listOf(
             InputField(
                 label = context.getString(R.string.sub_setting_password),
