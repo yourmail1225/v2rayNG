@@ -224,8 +224,6 @@ class BackupViewModel(application: Application) : BaseViewModel(application) {
                 backupDir.deleteRecursively()
             }
         }
-}
-
     fun requestBackup(location: BackupLocation) {
         if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
             _backupPasswordPrompt.value = true
@@ -285,3 +283,4 @@ class BackupViewModel(application: Application) : BaseViewModel(application) {
         _backupPasswordPrompt.value = false
         _pendingBackupAction = null
     }
+}
