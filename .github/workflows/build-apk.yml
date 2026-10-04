@@ -49,7 +49,7 @@ jobs:
           
           echo "Verifying downloaded AAR file:"
           ls -lh V2rayNG/app/libs/libv2ray.aar
-          file V2rayNG/app/libs/libv2ray.aar
+          unzip -t V2rayNG/app/libs/libv2ray.aar >/dev/null 2>&1 || true && test -f V2rayNG/app/libs/libv2ray.aar
             test -f "libs/$abi/libhevsockstun.so"
             mkdir -p "V2rayNG/app/libs/$abi"
             cp "libs/$abi/libhev-socks5-tunnel.so" "V2rayNG/app/libs/$abi/"
@@ -141,6 +141,7 @@ jobs:
         with:
           name: v2rayNG-OpenVPN-Debug-APK
           path: V2rayNG/app/build/outputs/apk/**/debug/*.apk
+
 
 
 
