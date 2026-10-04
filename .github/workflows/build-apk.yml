@@ -1,4 +1,4 @@
-name: Build APK
+﻿name: Build APK
 
 on:
   workflow_dispatch:
@@ -41,32 +41,15 @@ jobs:
           DOWNLOAD_URL=$(curl -s https://api.github.com/repos/2dust/AndroidLibXrayLite/releases/latest | grep "browser_download_url.*aar" | cut -d : -f 2,3 | tr -d '\" ' | head -n 1)
           
           if [ -z "$DOWNLOAD_URL" ]; then
-            DOWNLOAD_URL="https://github.com/2dust/AndroidLibXrayLite/releases/download/v25.2.21/AndroidLibXrayLite.aar"
+            DOWNLOAD_URL="https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.9.30/libv2ray.aar"
           fi
           
           echo "Downloading from: $DOWNLOAD_URL"
-          curl -L -f -o V2rayNG/app/libs/AndroidLibXrayLite.aar "$DOWNLOAD_URL"
+          curl -L -f -o V2rayNG/app/libs/libv2ray.aar "$DOWNLOAD_URL"
           
           echo "Verifying downloaded AAR file:"
-          ls -lh V2rayNG/app/libs/AndroidLibXrayLite.aar
-          file V2rayNG/app/libs/AndroidLibXrayLite.aar
-
-      - name: Compile Tun library
-        run: |
-          set -euo pipefail
-          chmod +x compile-hevtun.sh
-          ./compile-hevtun.sh
-
-      - name: Copy HEV tun libraries into app jniLibs
-        run: |
-          set -euo pipefail
-          # compile-hevtun.sh stages libhev-socks5-tunnel.so (in-process JNI for the
-          # hev tun mode of TProxyService) and libhevsockstun.so (root-mode engine)
-          # under the repository-root libs/. The app module packages jniLibs from
-          # V2rayNG/app/libs, so a missing copy means the APK cannot load the hev
-          # tunnel and VPN mode crashes with UnsatisfiedLinkError. Fail hard.
-          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
-            test -f "libs/$abi/libhev-socks5-tunnel.so"
+          ls -lh V2rayNG/app/libs/libv2ray.aar
+          file V2rayNG/app/libs/libv2ray.aar"libs/$abi/libhev-socks5-tunnel.so"
             test -f "libs/$abi/libhevsockstun.so"
             mkdir -p "V2rayNG/app/libs/$abi"
             cp "libs/$abi/libhev-socks5-tunnel.so" "V2rayNG/app/libs/$abi/"
@@ -158,3 +141,7 @@ jobs:
         with:
           name: v2rayNG-OpenVPN-Debug-APK
           path: V2rayNG/app/build/outputs/apk/**/debug/*.apk
+
+
+
+
