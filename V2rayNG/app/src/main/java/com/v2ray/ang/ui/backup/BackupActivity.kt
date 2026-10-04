@@ -93,7 +93,6 @@ class BackupActivity : HelperBaseComponentActivity() {
     @Composable
     override fun ScreenContent() {
         val backupPasswordPrompt by viewModel.backupPasswordPrompt.collectAsStateWithLifecycle()
-        val backupPasswordPrompt by viewModel.backupPasswordPrompt.collectAsStateWithLifecycle()
         BackupScreen(
             isLoadingState = viewModel.isLoading,
             webDavConfigState = viewModel.webDavConfig,
