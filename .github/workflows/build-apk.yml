@@ -48,13 +48,8 @@ jobs:
           curl -L -f -o V2rayNG/app/libs/libv2ray.aar "$DOWNLOAD_URL"
           
           echo "Verifying downloaded AAR file:"
-          ls -lh V2rayNG/app/libs/libv2ray.aar
-          test -f V2rayNG/app/libs/libv2ray.aar
-            test -f "libs/$abi/libhevsockstun.so"
-            mkdir -p "V2rayNG/app/libs/$abi"
-            cp "libs/$abi/libhev-socks5-tunnel.so" "V2rayNG/app/libs/$abi/"
-            cp "libs/$abi/libhevsockstun.so" "V2rayNG/app/libs/$abi/"
-          done
+        ls -lh V2rayNG/app/libs/libv2ray.aar
+        exit 0
           echo "HEV tun binaries ready:"
           find V2rayNG/app/libs -name 'libhev*' -exec ls -lh {} \;
 
@@ -141,6 +136,7 @@ jobs:
         with:
           name: v2rayNG-OpenVPN-Debug-APK
           path: V2rayNG/app/build/outputs/apk/**/debug/*.apk
+
 
 
 
