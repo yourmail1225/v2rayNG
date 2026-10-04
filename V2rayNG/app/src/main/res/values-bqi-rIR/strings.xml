@@ -335,7 +335,7 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">سرآیندا درخواست (قالوو JSON)</string>
     <string name="sub_setting_filter">فیلتر نیشتنا وا regex</string>
-    <string name="sub_setting_password">رزم اشتراک</string>
+    <string name="sub_setting_password"></string>
     <string name="sub_password_prompt_title">رزم اشتراک را وارد کاڑیت</string>
     <string name="sub_password_change_message">برای تأیید تغییرات، رزم اشتراک را وارد بکیت.</string>
     <string name="sub_password_delete_message">برای حذف ای اشتراک، رزم اشتراک را وارد بکیت.</string>

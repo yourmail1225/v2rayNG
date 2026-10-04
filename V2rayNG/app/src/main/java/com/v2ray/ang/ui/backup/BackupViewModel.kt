@@ -22,10 +22,33 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+import com.v2ray.ang.handler.ActivationManager
+import com.v2ray.ang.util.PasswordGate
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
 class BackupViewModel(application: Application) : BaseViewModel(application) {
 
     private val _webDavConfig = MutableStateFlow(MmkvManager.decodeWebDavConfig())
     val webDavConfig: StateFlow<WebDavConfig?> = _webDavConfig.asStateFlow()
+
+    private val _backupPasswordPrompt = MutableStateFlow(false)
+    val backupPasswordPrompt: StateFlow<Boolean> = _backupPasswordPrompt.asStateFlow()
+
+    private val _readyBackupAction = MutableSharedFlow<BackupAction>(extraBufferCapacity = 1)
+    val readyBackupAction: SharedFlow<BackupAction> = _readyBackupAction.asSharedFlow()
+
+    private var _pendingBackupAction: BackupAction? = null
+
+    sealed interface BackupAction {
+        data object LocalBackup : BackupAction
+        data object WebDavBackup : BackupAction
+        data object ShareBackup : BackupAction
+        data object LocalRestore : BackupAction
+        data object WebDavRestore : BackupAction
+    }
+
 
     sealed interface BackupViewModelEvent : ViewModelEvent {
         data class ShareFile(val filePath: String) : BackupViewModelEvent
@@ -202,3 +225,63 @@ class BackupViewModel(application: Application) : BaseViewModel(application) {
             }
         }
 }
+
+    fun requestBackup(location: BackupLocation) {
+        if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
+            _backupPasswordPrompt.value = true
+            _pendingBackupAction = when (location) {
+                BackupLocation.Local -> BackupAction.LocalBackup
+                BackupLocation.WebDav -> BackupAction.WebDavBackup
+            }
+            return
+        }
+        when (location) {
+            BackupLocation.Local -> _readyBackupAction.tryEmit(BackupAction.LocalBackup)
+            BackupLocation.WebDav -> backupViaWebDav(app.applicationContext.cacheDir, getString(R.string.app_name))
+        }
+    }
+
+    fun requestShareBackup() {
+        if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
+            _backupPasswordPrompt.value = true
+            _pendingBackupAction = BackupAction.ShareBackup
+            return
+        }
+        shareBackup(app.applicationContext.cacheDir, getString(R.string.app_name))
+    }
+
+    fun requestRestore(location: BackupLocation) {
+        if (PasswordGate.requiresPassword(ActivationManager.activationPassword())) {
+            _backupPasswordPrompt.value = true
+            _pendingBackupAction = when (location) {
+                BackupLocation.Local -> BackupAction.LocalRestore
+                BackupLocation.WebDav -> BackupAction.WebDavRestore
+            }
+            return
+        }
+        when (location) {
+            BackupLocation.Local -> _readyBackupAction.tryEmit(BackupAction.LocalRestore)
+            BackupLocation.WebDav -> restoreViaWebDav(app.applicationContext.cacheDir)
+        }
+    }
+
+    fun verifyBackupPassword(input: String): Boolean {
+        if (!PasswordGate.verify(input, ActivationManager.activationPassword())) return false
+        _backupPasswordPrompt.value = false
+        val pending = _pendingBackupAction
+        _pendingBackupAction = null
+        when (pending) {
+            BackupAction.LocalBackup -> _readyBackupAction.tryEmit(BackupAction.LocalBackup)
+            BackupAction.WebDavBackup -> backupViaWebDav(app.applicationContext.cacheDir, getString(R.string.app_name))
+            BackupAction.ShareBackup -> shareBackup(app.applicationContext.cacheDir, getString(R.string.app_name))
+            BackupAction.LocalRestore -> _readyBackupAction.tryEmit(BackupAction.LocalRestore)
+            BackupAction.WebDavRestore -> restoreViaWebDav(app.applicationContext.cacheDir)
+            null -> {}
+        }
+        return true
+    }
+
+    fun dismissBackupPassword() {
+        _backupPasswordPrompt.value = false
+        _pendingBackupAction = null
+    }

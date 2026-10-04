@@ -201,7 +201,7 @@ fun PasswordVerifyDialog(
         message = null,
         fields = listOf(
             InputField(
-                label = context.getString(R.string.sub_setting_password),
+                label = "",
                 value = input,
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation()

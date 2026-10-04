@@ -335,7 +335,7 @@
     <string name="sub_setting_user_agent" translatable="false">User Agent</string>
     <string name="sub_setting_request_headers">请求头（JSON 格式）</string>
     <string name="sub_setting_filter">别名正则过滤</string>
-    <string name="sub_setting_password">订阅密码</string>
+    <string name="sub_setting_password"></string>
     <string name="sub_password_prompt_title">请输入订阅密码</string>
     <string name="sub_password_change_message">请输入订阅密码以确认更改。</string>
     <string name="sub_password_delete_message">请输入订阅密码以删除此订阅。</string>
