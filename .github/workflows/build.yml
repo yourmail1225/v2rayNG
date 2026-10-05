@@ -86,14 +86,6 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
-      # Decode Keystore skipped (no signing secrets for debug-only build)
-      uses: timheuer/base64-to-file@v2.0.0
-      id: android_keystore
-      with:
-        fileName: "android_keystore.jks"
-        encodedString: ${{ secrets.APP_KEYSTORE_BASE64 }}
-
-    - name: Build APK
       run: |
         cd ${{ github.workspace }}/V2rayNG
         echo "sdk.dir=${ANDROID_HOME}" > local.properties
