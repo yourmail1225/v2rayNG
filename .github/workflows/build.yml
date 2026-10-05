@@ -86,7 +86,7 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
-    - name: Decode Keystore
+      # Decode Keystore skipped (no signing secrets for debug-only build)
       uses: timheuer/base64-to-file@v2.0.0
       id: android_keystore
       with:
