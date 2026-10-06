@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.v2ray.ang.AppConfig
@@ -64,6 +65,19 @@ class BackupActivity : HelperBaseComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         observeViewModel()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.readyBackupAction.collect {
+                    when (it) {
+                        BackupViewModel.BackupAction.LocalBackup -> backupViaLocal()
+                        BackupViewModel.BackupAction.WebDavBackup -> viewModel.backupViaWebDav(cacheDir, getString(R.string.app_name))
+                        BackupViewModel.BackupAction.ShareBackup -> viewModel.shareBackup(cacheDir, getString(R.string.app_name))
+                        BackupViewModel.BackupAction.LocalRestore -> restoreViaLocal()
+                        BackupViewModel.BackupAction.WebDavRestore -> viewModel.restoreViaWebDav(cacheDir)
+                    }
+                }
+            }
+        }
     }
 
     private fun observeViewModel() {
@@ -103,14 +117,14 @@ class BackupActivity : HelperBaseComponentActivity() {
             onWebDavSave = { config -> viewModel.saveWebDavConfig(config) },
             onBackClick = { finish() }
         )
-            if (backupPasswordPrompt) {
+        if (backupPasswordPrompt) {
             PasswordVerifyDialog(
                 verify = { input -> viewModel.verifyBackupPassword(input) },
                 onVerified = { viewModel.dismissBackupPassword() },
                 onDismiss = { viewModel.dismissBackupPassword() },
             )
         }
-}
+    }
 
     private fun handleShareFile(filePath: String) {
         startActivity(
@@ -289,28 +303,6 @@ fun BackupScreen(
             },
             onDismiss = { showWebDavDialog = false }
         )
-        if (backupPasswordPrompt) {
-            PasswordVerifyDialog(
-                verify = { input -> viewModel.verifyBackupPassword(input) },
-                onVerified = { viewModel.dismissBackupPassword() },
-                onDismiss = { viewModel.dismissBackupPassword() },
-            )
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            viewModel.readyBackupAction.collect {
-                when (it) {
-                    BackupViewModel.BackupAction.LocalBackup -> backupViaLocal()
-                    BackupViewModel.BackupAction.WebDavBackup -> viewModel.backupViaWebDav(cacheDir, getString(R.string.app_name))
-                    BackupViewModel.BackupAction.ShareBackup -> viewModel.shareBackup(cacheDir, getString(R.string.app_name))
-                    BackupViewModel.BackupAction.LocalRestore -> restoreViaLocal()
-                    BackupViewModel.BackupAction.WebDavRestore -> viewModel.restoreViaWebDav(cacheDir)
-                }
-            }
-        }
     }
 }
 
